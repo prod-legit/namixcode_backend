@@ -8,7 +8,7 @@ from app.application.api.schemas.auth import AuthToken
 from app.application.api.schemas.org import CreateOrgSchema, OrgSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.org.create_org import CreateOrgUseCase, CreateOrgCommand
-from app.logic.queries.apply.get_applies import GetAppliesUseCase, GetAppliesQuery
+from app.logic.queries.apply.get_org_applies import GetOrgAppliesUseCase, GetOrgAppliesQuery
 from app.logic.queries.org.get_orgs import GetOrgsUseCase, GetOrgsQuery
 
 router = APIRouter(
@@ -74,7 +74,7 @@ async def list_orgs(get_orgs: FromDishka[GetOrgsUseCase]) -> list[OrgSchema]:
 )
 async def get_org_applies(
         current_org: CurrentOrgDep,
-        get_applies: FromDishka[GetAppliesUseCase]
+        get_applies: FromDishka[GetOrgAppliesUseCase]
 ) -> list[ApplySchema]:
-    applies = await get_applies.execute(GetAppliesQuery(current_org.id))
+    applies = await get_applies.execute(GetOrgAppliesQuery(current_org.id))
     return [ApplySchema.from_entity(apply) for apply in applies]

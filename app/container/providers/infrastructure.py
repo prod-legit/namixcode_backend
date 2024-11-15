@@ -2,6 +2,7 @@ from dishka import Provider, provide, Scope
 
 from app.infrastructure.repositories.apply import SQLAlchemyApplyRepository, IApplyRepository
 from app.infrastructure.repositories.org import IOrgRepository, SQLAlchemyOrgRepository
+from app.infrastructure.repositories.user import SQLAlchemyUserRepository, IUserRepository
 
 
 class InfrastructureProvider(Provider):
@@ -14,4 +15,9 @@ class InfrastructureProvider(Provider):
         SQLAlchemyOrgRepository,
         scope=Scope.REQUEST,
         provides=IOrgRepository
+    )
+    user_repository = provide(
+        SQLAlchemyUserRepository,
+        scope=Scope.REQUEST,
+        provides=IUserRepository
     )

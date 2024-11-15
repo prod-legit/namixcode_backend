@@ -8,16 +8,16 @@ from app.logic.queries.base import IQuery, IUseCase
 
 
 @dataclass(frozen=True)
-class GetAppliesQuery(IQuery):
+class GetOrgAppliesQuery(IQuery):
     org_id: str
 
 
 @dataclass(eq=False, frozen=True)
-class GetAppliesUseCase(IUseCase[list[ApplyEntity]]):
+class GetOrgAppliesUseCase(IUseCase[list[ApplyEntity]]):
     org_repository: IOrgRepository
     apply_repository: IApplyRepository
 
-    async def execute(self, query: GetAppliesQuery) -> list[ApplyEntity]:
+    async def execute(self, query: GetOrgAppliesQuery) -> list[ApplyEntity]:
         if not await self.org_repository.get(query.org_id):
             raise OrgNotFoundException(org_id=query.org_id)
 
