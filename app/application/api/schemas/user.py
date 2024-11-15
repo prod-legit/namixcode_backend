@@ -1,15 +1,20 @@
+from datetime import date
+
 from pydantic import BaseModel, UUID4
 
 from app.domain.entities.user import UserEntity
+from app.domain.values.user import SexEnum
 
 
 class UserSchema(BaseModel):
     id: UUID4
     name: str
     phone: str
+    sex: SexEnum
+    birthdate: date
     email: str
     experience: int
-    skills: list[str]
+    professions: list[str]
     interests: list[str]
 
     @classmethod
@@ -18,9 +23,11 @@ class UserSchema(BaseModel):
             id=entity.id,
             name=entity.name,
             phone=entity.phone,
+            sex=SexEnum(entity.sex),
+            birthdate=entity.birthdate,
             email=entity.email,
             experience=entity.experience,
-            skills=entity.skills,
+            professions=entity.professions,
             interests=entity.interests
         )
 
@@ -31,6 +38,8 @@ class CreateUserSchema(BaseModel):
 
     name: str
     phone: str
+    sex: SexEnum
+    birthdate: date
     experience: int
-    skills: list[str]
+    professions: list[str]
     interests: list[str]

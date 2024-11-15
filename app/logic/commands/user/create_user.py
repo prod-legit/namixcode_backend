@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 
 from app.domain.entities.user import UserEntity
 from app.infrastructure.repositories.user import IUserRepository
@@ -14,8 +15,10 @@ class CreateUserCommand(ICommand):
 
     name: str
     phone: str
+    sex: str
+    birthdate: date
     experience: int
-    skills: list[str]
+    professions: list[str]
     interests: list[str]
 
 
@@ -32,8 +35,10 @@ class CreateUserUseCase(IUseCase[UserEntity]):
             hashed_password=hash_password(command.password),
             name=command.name,
             phone=command.phone,
+            sex=command.sex,
+            birthdate=command.birthdate,
             experience=command.experience,
-            skills=command.skills,
+            professions=command.professions,
             interests=command.interests,
         )
         await self.user_repository.create(user)

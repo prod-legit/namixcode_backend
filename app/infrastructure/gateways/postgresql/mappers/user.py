@@ -1,6 +1,6 @@
 from app.domain.entities.user import UserEntity
 from app.infrastructure.gateways.postgresql.mappers.base import IORMMapper
-from app.infrastructure.gateways.postgresql.models import UserSkillORM, UserInterestORM, UserORM
+from app.infrastructure.gateways.postgresql.models import UserProfessionORM, UserInterestORM, UserORM
 
 
 class UserORMMapper(IORMMapper[UserEntity, UserORM]):
@@ -12,8 +12,10 @@ class UserORMMapper(IORMMapper[UserEntity, UserORM]):
             hashed_password=entity.hashed_password,
             name=entity.name,
             phone=entity.phone,
+            sex=entity.sex,
+            birthdate=entity.birthdate,
             experience=entity.experience,
-            skills=[UserSkillORM(skill=skill) for skill in entity.skills],
+            professions=[UserProfessionORM(profession=profession) for profession in entity.professions],
             interests=[UserInterestORM(interest=interest) for interest in entity.interests]
         )
 
@@ -25,7 +27,9 @@ class UserORMMapper(IORMMapper[UserEntity, UserORM]):
             hashed_password=orm.hashed_password,
             name=orm.name,
             phone=orm.phone,
+            sex=orm.sex,
+            birthdate=orm.birthdate,
             experience=orm.experience,
-            skills=[skill.skill for skill in orm.skills],
+            professions=[profession.profession for profession in orm.professions],
             interests=[interest.interest for interest in orm.interests]
         )

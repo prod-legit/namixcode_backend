@@ -38,7 +38,7 @@ class SQLAlchemyUserRepository(IUserRepository):
             select(UserORM)
             .where(UserORM.id == id_)
             .options(
-                selectinload(UserORM.skills),
+                selectinload(UserORM.professions),
                 selectinload(UserORM.interests)
             )
         )
@@ -50,7 +50,7 @@ class SQLAlchemyUserRepository(IUserRepository):
             select(UserORM)
             .where(UserORM.email == email)
             .options(
-                selectinload(UserORM.skills),
+                selectinload(UserORM.professions),
                 selectinload(UserORM.interests)
             )
         )

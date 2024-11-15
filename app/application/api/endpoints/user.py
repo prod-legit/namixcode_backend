@@ -32,8 +32,10 @@ async def register_user(
         password=data.password,
         name=data.name,
         phone=data.phone,
+        sex=data.sex,
+        birthdate=data.birthdate,
         experience=data.experience,
-        skills=data.skills,
+        professions=data.professions,
         interests=data.interests
     ))
     token = await generate_jwt.execute(GenerateJWTCommand(sub=user.id))

@@ -1,14 +1,16 @@
+from datetime import date
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.gateways.postgresql.models.base import BaseORM, IDMixin
 
 
-class UserSkillORM(BaseORM, IDMixin):
-    __tablename__ = "user_skills"
+class UserProfessionORM(BaseORM, IDMixin):
+    __tablename__ = "user_professions"
 
     apply_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    skill: Mapped[str]
+    profession: Mapped[str]
 
 
 class UserInterestORM(BaseORM, IDMixin):
@@ -26,7 +28,9 @@ class UserORM(BaseORM, IDMixin):
 
     name: Mapped[str]
     phone: Mapped[str]
+    sex: Mapped[str]
+    birthdate: Mapped[date]
     experience: Mapped[int]
 
-    skills: Mapped[list[UserSkillORM]] = relationship(UserSkillORM, backref="user")
+    professions: Mapped[list[UserProfessionORM]] = relationship(UserProfessionORM, backref="user")
     interests: Mapped[list[UserInterestORM]] = relationship(UserInterestORM, backref="user")

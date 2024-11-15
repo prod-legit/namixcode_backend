@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 
 from app.domain.entities.base import BaseEntity, IDMixin
 
@@ -10,6 +11,8 @@ class UserEntity(BaseEntity, IDMixin):
 
     name: str
     phone: str
+    sex: str
+    birthdate: date
     experience: int
-    skills: list[str]
+    professions: list[str]
     interests: list[str]
