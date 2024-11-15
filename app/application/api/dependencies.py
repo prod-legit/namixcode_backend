@@ -8,7 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.domain.entities.org import OrgEntity
 from app.logic.commands.auth.decode_jwt import DecodeJWTCommand, DecodeJWTUseCase
 from app.logic.exceptions.auth import EmptyAuthTokenException
-from app.logic.queries.org import GetOrgQuery, GetOrgUseCase
+from app.logic.queries.org.get_org import GetOrgQuery, GetOrgUseCase
 
 
 @inject

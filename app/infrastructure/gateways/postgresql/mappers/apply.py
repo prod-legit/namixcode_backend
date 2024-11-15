@@ -8,6 +8,7 @@ class ApplyORMMapper(IORMMapper[ApplyEntity, ApplyORM]):
     def from_entity(entity: ApplyEntity) -> ApplyORM:
         return ApplyORM(
             id=entity.id,
+            org_id=entity.org_id,
             name=entity.name,
             phone=entity.phone,
             email=entity.email,
@@ -20,6 +21,7 @@ class ApplyORMMapper(IORMMapper[ApplyEntity, ApplyORM]):
     def to_entity(orm: ApplyORM) -> ApplyEntity:
         return ApplyEntity(
             id=orm.id,
+            org_id=orm.org_id,
             name=orm.name,
             phone=orm.phone,
             email=orm.email,

@@ -21,6 +21,7 @@ class UserInterestORM(BaseORM, IDMixin):
 class ApplyORM(BaseORM, IDMixin):
     __tablename__ = "applies"
 
+    org_id: Mapped[str] = mapped_column(ForeignKey("orgs.id", ondelete="CASCADE"))
     name: Mapped[str]
     phone: Mapped[str]
     email: Mapped[str]

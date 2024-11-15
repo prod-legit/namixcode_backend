@@ -13,7 +13,8 @@ class OrgExistsException(ObjectExistsException):
 
 @dataclass(eq=False, frozen=True)
 class OrgNotFoundException(ObjectNotFoundException):
-    search_params: dict
+    org_id: str | None = None
+    email: str | None = None
 
     def __str__(self) -> str:
-        return "Organization with this search parameters not found"
+        return f"Organization with ID<{self.org_id}> | Email<{self.email}> not found"

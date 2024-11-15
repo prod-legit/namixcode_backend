@@ -24,6 +24,7 @@ async def make_apply(
         create_apply: FromDishka[CreateApplyUseCase]
 ) -> ApplySchema:
     apply = await create_apply.execute(CreateApplyCommand(
+        org_id=str(data.org_id),
         name=data.name,
         phone=data.phone,
         email=data.email,

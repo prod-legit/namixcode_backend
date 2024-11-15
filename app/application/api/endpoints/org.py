@@ -3,10 +3,13 @@ from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter
 
 from app.application.api.dependencies import CurrentOrgDep
+from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
 from app.application.api.schemas.org import CreateOrgSchema, OrgSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.org.create_org import CreateOrgUseCase, CreateOrgCommand
+from app.logic.queries.apply.get_applies import GetAppliesUseCase, GetAppliesQuery
+from app.logic.queries.org.get_orgs import GetOrgsUseCase, GetOrgsQuery
 
 router = APIRouter(
     prefix="/org",
@@ -50,3 +53,28 @@ async def register_org(
 )
 async def get_current_org(current_org: CurrentOrgDep) -> OrgSchema:
     return OrgSchema.from_entity(current_org)
+
+
+@router.get(
+    path="/list",
+    summary="Получить список организаций",
+    operation_id="listOrgs",
+    response_model=list[OrgSchema]
+)
+async def list_orgs(get_orgs: FromDishka[GetOrgsUseCase]) -> list[OrgSchema]:
+    orgs = await get_orgs.execute(GetOrgsQuery())
+    return [OrgSchema.from_entity(org) for org in orgs]
+
+
+@router.get(
+    path="/applies",
+    summary="Получить список откликов",
+    operation_id="listApplies",
+    response_model=list[ApplySchema]
+)
+async def get_org_applies(
+        current_org: CurrentOrgDep,
+        get_applies: FromDishka[GetAppliesUseCase]
+) -> list[ApplySchema]:
+    applies = await get_applies.execute(GetAppliesQuery(current_org.id))
+    return [ApplySchema.from_entity(apply) for apply in applies]

@@ -1,14 +1,14 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 from app.domain.entities.org import OrgEntity
 from app.infrastructure.repositories.org import IOrgRepository
-from app.logic.commands.base import ICommand, IUseCase
 from app.logic.exceptions.base import EmptySearchParamsException
 from app.logic.exceptions.org import OrgNotFoundException
+from app.logic.queries.base import IQuery, IUseCase
 
 
 @dataclass(frozen=True)
-class GetOrgQuery(ICommand):
+class GetOrgQuery(IQuery):
     org_id: str | None = None
     email: str | None = None
 
@@ -26,6 +26,6 @@ class GetOrgUseCase(IUseCase[OrgEntity]):
             raise EmptySearchParamsException()
 
         if org is None:
-            raise OrgNotFoundException(search_params=asdict(query))
+            raise OrgNotFoundException(org_id=query.org_id, email=query.email)
 
         return org

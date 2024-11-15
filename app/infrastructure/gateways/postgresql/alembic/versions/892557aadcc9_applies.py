@@ -1,7 +1,7 @@
 """applies
 
 Revision ID: 892557aadcc9
-Revises: 
+Revises: 61959d644175
 Create Date: 2024-11-15 20:47:05.108599
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "892557aadcc9"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "61959d644175"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -22,12 +22,19 @@ def upgrade() -> None:
     op.create_table(
         "applies",
         sa.Column("id", sa.UUID(as_uuid=False), nullable=False),
+        sa.Column("org_id", sa.UUID(as_uuid=False), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("phone", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("experience", sa.Integer(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_applies")),
-        sa.UniqueConstraint("id", name=op.f("uq_applies_id"))
+        sa.UniqueConstraint("id", name=op.f("uq_applies_id")),
+        sa.ForeignKeyConstraint(
+            ["org_id"],
+            ["orgs.id"],
+            name=op.f("fk_applies_org_id_orgs"),
+            ondelete="CASCADE"
+        ),
     )
     op.create_table(
         "user_interests",

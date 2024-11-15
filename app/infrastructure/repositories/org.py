@@ -18,6 +18,9 @@ class IOrgRepository(ABC):
     async def get(self, id_: str) -> OrgEntity | None: ...
 
     @abstractmethod
+    async def get_all(self) -> list[OrgEntity]: ...
+
+    @abstractmethod
     async def get_by_email(self, email: str) -> OrgEntity | None: ...
 
     @abstractmethod
@@ -36,6 +39,10 @@ class SQLAlchemyOrgRepository(IOrgRepository):
         stmt = select(OrgORM).where(OrgORM.id == id_)
         if db_org := await self.session.scalar(stmt):
             return OrgORMMapper.to_entity(db_org)
+
+    async def get_all(self) -> list[OrgEntity]:
+        db_orgs = await self.session.scalars(select(OrgORM))
+        return [OrgORMMapper.to_entity(db_org) for db_org in db_orgs]
 
     async def get_by_email(self, email: str) -> OrgEntity | None:
         stmt = select(OrgORM).where(OrgORM.email == email)

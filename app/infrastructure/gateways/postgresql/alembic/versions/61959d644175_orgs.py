@@ -1,7 +1,7 @@
 """orgs
 
 Revision ID: 61959d644175
-Revises: 892557aadcc9
+Revises:
 Create Date: 2024-11-15 21:46:24.141980
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "61959d644175"
-down_revision: Union[str, None] = "892557aadcc9"
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
