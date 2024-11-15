@@ -1,18 +1,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TypeVar
 
 
 @dataclass(frozen=True)
-class BaseCommand(ABC):
+class ICommand(ABC):  # noqa: B024
     pass
 
 
-CT = TypeVar("CT", bound=BaseCommand)
-CR = TypeVar("CR")
-
 @dataclass(eq=False, frozen=True)
-class BaseCommandHandler[CT, CR](ABC):
+class IUseCase[T](ABC):
     @abstractmethod
-    async def handle(self, command: CT) -> CR:
+    async def execute(self, command: ICommand) -> T:
         pass

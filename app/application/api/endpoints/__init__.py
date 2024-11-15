@@ -1,2 +1,3 @@
+from .apply import router as user_router
 
-routers = ()
+routers = (user_router,)

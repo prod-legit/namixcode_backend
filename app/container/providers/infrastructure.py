@@ -1,5 +1,11 @@
-from dishka import Provider
+from dishka import Provider, provide, Scope
+
+from app.infrastructure.repositories.apply import SQLAlchemyApplyRepository, IApplyRepository
 
 
 class InfrastructureProvider(Provider):
-    pass
+    apply_repository = provide(
+        SQLAlchemyApplyRepository,
+        scope=Scope.REQUEST,
+        provides=IApplyRepository
+    )

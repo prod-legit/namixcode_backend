@@ -1,8 +1,9 @@
 from collections.abc import AsyncIterator
 
-from app.settings import Settings
 from dishka import Provider, Scope, from_context, provide
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from app.settings import Settings
 
 
 class DefaultProvider(Provider):
