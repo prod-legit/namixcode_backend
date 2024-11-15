@@ -1,0 +1,44 @@
+name: "namixcode"
+
+services:
+  backend:
+    image: namixcode_backend
+    build:
+      context: .
+      target: dev
+    command: --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./app:/opt/app:ro" # for auto reload
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_started
+    environment:
+      - AUTO_RELOAD=True
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:?}
+      - DATABASE_USER=${DATABASE_USER:?}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:?}
+
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME:?}
+      - POSTGRES_USER=${DATABASE_USER:?}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:?}
+
+volumes:
+  db-data:
+
+networks:
+  internal:
