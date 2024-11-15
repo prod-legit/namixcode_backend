@@ -28,3 +28,6 @@ class Settings(BaseSettings):
 
     SERVICE_PORT: int = 8000
     database: DatabaseSettings
+
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
