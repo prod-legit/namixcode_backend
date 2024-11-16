@@ -3,14 +3,40 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import httpx
-from app.domain.entities.analyze import AnalyzeEntity, SuitabilityEntity, CosmogramEntity, TaroCardEntity
+
+from app.domain.entities.analyze import (
+    SuitabilityEntity,
+    CosmogramEntity,
+    TaroCardEntity,
+    CompareAnalyzeEntity,
+    AtmosphereAnalyzeEntity,
+    SuitableAnalyzeEntity, UserAnalyzeEntity, CompatibilityEntity
+)
 from app.domain.entities.user import UserEntity
 
 
 @dataclass(eq=False, frozen=True)
 class IGPTTarologue(ABC):
     @abstractmethod
-    async def analyze(self, user: UserEntity) -> AnalyzeEntity: ...
+    async def suitable_analyze(self, user: UserEntity) -> SuitableAnalyzeEntity: ...
+
+    @abstractmethod
+    async def compare_analyze(self, user: UserEntity, boss: UserEntity) -> CompareAnalyzeEntity: ...
+
+    @abstractmethod
+    async def atmosphere_analyze(self, users: list[UserEntity]) -> AtmosphereAnalyzeEntity: ...
+
+    @staticmethod
+    @abstractmethod
+    def parse_suitable_analyze(data: str) -> SuitableAnalyzeEntity: ...
+
+    @staticmethod
+    @abstractmethod
+    def parse_compare_analyze(data: str) -> CompareAnalyzeEntity: ...
+
+    @staticmethod
+    @abstractmethod
+    def parse_atmosphere_analyze(data: str) -> AtmosphereAnalyzeEntity: ...
 
 
 @dataclass(eq=False, frozen=True)
@@ -27,7 +53,19 @@ class YandexGPTTarologue(IGPTTarologue):
             "Content-Type": "application/json"
         }
 
-    async def analyze(self, user: UserEntity) -> AnalyzeEntity:
+    async def request(self, data: dict) -> dict:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                url=self.api_url,
+                json=data,
+                headers=self.headers
+            )
+            json_data = response.json()
+
+        llm_response = json_data["result"]["alternatives"][0]["message"]["text"].strip("```")
+        return json.loads(llm_response)
+
+    async def suitable_analyze(self, user: UserEntity) -> SuitableAnalyzeEntity:
         data = {
             "messages": [
                 {
@@ -100,101 +138,342 @@ class YandexGPTTarologue(IGPTTarologue):
             },
             "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
         }
+        llm_response = await self.request(data)
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(
-                url=self.api_url,
-                json=data,
-                headers=self.headers
-            )
-            json_data = response.json()
+        return self.parse_suitable_analyze(llm_response)
 
-        llm_response = json_data["result"]["alternatives"][0]["message"]["text"]
-        return self.parse_response(llm_response)
+    async def compare_analyze(self, employee: UserEntity, boss: UserEntity) -> CompareAnalyzeEntity:
+        data = {
+            "messages": [
+                {
+                    "text": "Ты – эксперт по Таро и астрологии. "
+                            "Твоя задача – определить, насколько сработаются два человека: начальник и потенциальный подчиненный. "
+                            "На основе предоставленной информации (имя, дата рождения, пол, интересы и профессия) "
+                            "проведи анализ с использованием карт Таро и космограммы для каждого человека. "
+                            "Верни результаты в формате JSON.  Иногда будь категоричен. \n\n"
+                            "Входные данные:  \n"
+                            "1. Начальник:  \n"
+                            "   - Имя: {имя_начальника}  \n"
+                            "   - Дата рождения: {дата_рождения_начальника} (в формате YYYY-MM-DD)  \n"
+                            "   - Пол: {пол_начальника} (мужской/женский/другой)  \n"
+                            "   - Интересы: {интересы_начальника} (список через запятую)  \n"
+                            "   - Профессия: {профессия_начальника}  \n\n"
+                            "2. Подчиненный:  \n"
+                            "   - Имя: {имя_подчиненного}  \n"
+                            "   - Дата рождения: {дата_рождения_подчиненного} (в формате YYYY-MM-DD)  \n"
+                            "   - Пол: {пол_подчиненного} (мужской/женский/другой)  \n"
+                            "   - Интересы: {интересы_подчиненного} (список через запятую)  \n"
+                            "   - Профессия: {профессия_подчиненного}  \n\n"
+                            "Выходные данные в формате JSON должны содержать:  \n"
+                            "- `boss`: анализ начальника (карты Таро и космограмма)  \n"
+                            "- `employee`: анализ подчиненного (карты Таро и космограмма)  \n"
+                            "- `compatibility`: оценка совместимости (степень совместимости и краткое объяснение)  \n\n"
+                            "Пример результата:  \n"
+                            "{  \n  \"boss\": {  \n"
+                            "    \"cards\": [  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      },  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      }  \n"
+                            "    ],  \n"
+                            "    \"cosmogram\": {  \n"
+                            "      \"sun_sign\": \"Знак Солнца\",  \n"
+                            "      \"moon_sign\": \"Знак Луны\",  \n"
+                            "      \"rising_sign\": \"Асцендент\",  \n"
+                            "      \"elements\": {  \n"
+                            "        \"fire\": \"Количество планет в огненных знаках\",  \n"
+                            "        \"earth\": \"Количество планет в земных знаках\",  \n"
+                            "        \"air\": \"Количество планет в воздушных знаках\",  \n"
+                            "        \"water\": \"Количество планет в водных знаках\"  \n"
+                            "      }  \n"
+                            "     \"houses\": {  \n"
+                            "      \"house_1\": \"Описание первого дома\",  \n"
+                            "      \"house_2\": \"Описание второго дома\"  \n"
+                            "      \"house_3\": \"Описание третьего дома\"  \n"
+                            "    }  \n"
+                            "  },  \n"
+                            "  \"employee\": {  \n"
+                            "    \"cards\": [  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      },"
+                            "       {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      }  \n"
+                            "    ],  \n"
+                            "    \"cosmogram\": {  \n"
+                            "      \"sun_sign\": \"Знак Солнца\",  \n"
+                            "      \"moon_sign\": \"Знак Луны\",  \n"
+                            "      \"rising_sign\": \"Асцендент\",  \n"
+                            "      \"elements\": {  \n"
+                            "        \"fire\": \"Количество планет в огненных знаках\",  \n"
+                            "        \"earth\": \"Количество планет в земных знаках\",  \n"
+                            "        \"air\": \"Количество планет в воздушных знаках\",  \n"
+                            "        \"water\": \"Количество планет в водных знаках\"  \n"
+                            "      }  \n"
+                            "     \"houses\": {  \n"
+                            "      \"house_1\": \"Описание первого дома\",  \n"
+                            "      \"house_2\": \"Описание второго дома\"  \n"
+                            "      \"house_3\": \"Описание третьего дома\"  \n"
+                            "    }  \n"
+                            "    }  \n"
+                            "  },  \n"
+                            "  \"compatibility\": {  \n"
+                            "    \"score\": \"Процент совместимости\",  \n"
+                            "    \"explanation\": \"Краткое объяснение, почему эти два человека могут хорошо сработаться или наоборот.\"  \n"
+                            "  }  "
+                            "\n}",
+                    "role": "system"
+                },
+                {
+                    "text": f"Начальник:  \n"
+                            f"Имя: {boss.name}  \n"
+                            f"Дата рождения: {boss.birthdate}  \n"
+                            f"Пол: {boss.sex}  \n"
+                            f"Интересы: {boss.interests}  \n"
+                            f"Профессия: {boss.professions}  \n\n"
+                            f"Подчиненный:  \n"
+                            f"Имя: {employee.name}  \n"
+                            f"Дата рождения: {employee.birthdate} \n"
+                            f"Пол: {employee.sex}  \n"
+                            f"Интересы: {employee.interests}  \n"
+                            f"Профессия: {employee.professions}",
+                    "role": "user"
+                }
+            ],
+            "completionOptions": {
+                "temperature": 0.45,
+                "maxTokens": 1000
+            },
+            "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
+        }
+        llm_response = await self.request(data)
+
+        return self.parse_compare_analyze(llm_response)
+
+    async def atmosphere_analyze(self, users: list[UserEntity]) -> AtmosphereAnalyzeEntity:
+        text = "".join([
+            f"Имя: {user.name} "
+            f"Дата рождения: {user.birthdate} "
+            f"Пол: {user.sex} "
+            f"Интересы: {user.interests} "
+            f"Профессия: {user.professions}\n"
+            for user in users])
+
+        data = {
+            "messages": [
+                {
+                    "text": "Ты – эксперт по Таро и астрологии. "
+                            "Твоя задача – определить, "
+                            "насколько сработаются два человека: начальник и потенциальный подчиненный. "
+                            "На основе предоставленной информации (имя, дата рождения, пол, интересы и профессия) "
+                            "проведи анализ с использованием карт Таро и космограммы для каждого человека. "
+                            "Верни результаты в формате JSON.  "
+                            "Иногда будь категоричен. \n\n"
+                            "Входные данные:  \n"
+                            "1. Начальник:  \n"
+                            "   - Имя: {имя_начальника}  \n"
+                            "   - Дата рождения: {дата_рождения_начальника} (в формате YYYY-MM-DD)  \n"
+                            "   - Пол: {пол_начальника} (мужской/женский/другой)  \n"
+                            "   - Интересы: {интересы_начальника} (список через запятую)  \n"
+                            "   - Профессия: {профессия_начальника}  \n\n"
+                            "2. Подчиненный:  \n"
+                            "   - Имя: {имя_подчиненного}  \n"
+                            "   - Дата рождения: {дата_рождения_подчиненного} (в формате YYYY-MM-DD)  \n"
+                            "   - Пол: {пол_подчиненного} (мужской/женский/другой)  \n"
+                            "   - Интересы: {интересы_подчиненного} (список через запятую)  \n"
+                            "   - Профессия: {профессия_подчиненного}  \n\n"
+                            "Выходные данные в формате JSON должны содержать:  \n"
+                            "- `boss_analysis`: анализ начальника (карты Таро и космограмма)  \n"
+                            "- `employee_analysis`: анализ подчиненного (карты Таро и космограмма)  \n"
+                            "- `compatibility_analysis`: оценка совместимости (степень совместимости и краткое объяснение)  \n\n"
+                            "Пример результата:  \n"
+                            "{  \n"
+                            "  \"boss\": {  \n"
+                            "    \"cards\": [  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      },  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      }  \n"
+                            "    ],  \n"
+                            "    \"cosmogram\": {  \n"
+                            "      \"sun_sign\": \"Знак Солнца\",  \n"
+                            "      \"moon_sign\": \"Знак Луны\",  \n"
+                            "      \"rising_sign\": \"Асцендент\",  \n"
+                            "      \"elements\": {  \n"
+                            "        \"fire\": \"Количество планет в огненных знаках\",  \n"
+                            "        \"earth\": \"Количество планет в земных знаках\",  \n"
+                            "        \"air\": \"Количество планет в воздушных знаках\",  \n"
+                            "        \"water\": \"Количество планет в водных знаках\"  \n"
+                            "      }  \n"
+                            "     \"houses\": {  \n"
+                            "      \"house_1\": \"Описание первого дома\",  \n"
+                            "      \"house_2\": \"Описание второго дома\"  \n"
+                            "      \"house_3\": \"Описание третьего дома\"  \n"
+                            "    }  \n"
+                            "  },  \n"
+                            "  \"employee\": {  \n"
+                            "    \"cards\": [  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      },  \n"
+                            "      {  \n"
+                            "        \"name\": \"Название карты\",  \n"
+                            "        \"meaning\": \"Толкование карты\"  \n"
+                            "      }  \n"
+                            "    ],  \n"
+                            "    \"cosmogram\": {  \n"
+                            "      \"sun_sign\": \"Знак Солнца\",  \n"
+                            "      \"moon_sign\": \"Знак Луны\",  \n"
+                            "      \"rising_sign\": \"Асцендент\",  \n"
+                            "      \"elements\": {  \n"
+                            "        \"fire\": \"Количество планет в огненных знаках\",  \n"
+                            "        \"earth\": \"Количество планет в земных знаках\",  \n"
+                            "        \"air\": \"Количество планет в воздушных знаках\",  \n"
+                            "        \"water\": \"Количество планет в водных знаках\"  \n"
+                            "      }  \n"
+                            "     \"houses\": {  \n"
+                            "      \"house_1\": \"Описание первого дома\",  \n"
+                            "      \"house_2\": \"Описание второго дома\"  \n"
+                            "      \"house_3\": \"Описание третьего дома\"  \n"
+                            "    }  \n"
+                            "    }  \n"
+                            "  },  \n"
+                            "  \"compatibility\": {  \n"
+                            "    \"score\": \"Процент совместимости\",  \n"
+                            "    \"explanation\": \"Краткое объяснение, почему эти два человека могут хорошо сработаться или наоборот.\"  \n"
+                            "  }  \n"
+                            "}",
+                    "role": "system"
+                },
+                {
+                    "text": text,
+                    "role": "user"
+                }
+            ],
+            "completionOptions": {
+                "temperature": 0.45,
+                "maxTokens": 1000
+            },
+            "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
+        }
+        llm_response = await self.request(data)
+
+        return self.parse_atmosphere_analyze(llm_response)
 
     @staticmethod
-    def parse_response(response: str) -> AnalyzeEntity:
-        response = response.strip("```")
-        data = json.loads(response)
+    def parse_suitable_analyze(data: dict) -> SuitableAnalyzeEntity:
+        cards = data["cards"]
+        cosmogram = data["cosmogram"]
+        suitability = data["suitability"]
 
-        return AnalyzeEntity(
+        return SuitableAnalyzeEntity(
             cards=[TaroCardEntity(
                 name=card["name"],
                 meaning=card["meaning"]
-            ) for card in data["cards"]],
+            ) for card in cards],
             cosmogram=CosmogramEntity(
-                sun_sign=data["cosmogram"]["sun_sign"],
-                moon_sign=data["cosmogram"]["moon_sign"],
-                rising_sign=data["cosmogram"]["rising_sign"],
-                elements=data["cosmogram"]["elements"],
-                houses=data["cosmogram"]["houses"]
+                sun_sign=cosmogram["sun_sign"],
+                moon_sign=cosmogram["moon_sign"],
+                rising_sign=cosmogram["rising_sign"],
+                elements=cosmogram["elements"],
+                houses=cosmogram["houses"]
             ),
             suitability=SuitabilityEntity(
-                is_suitable=data["suitability"]["is_suitable"],
-                explanation=data["suitability"]["explanation"],
+                is_suitable=suitability["is_suitable"],
+                explanation=suitability["explanation"],
             )
         )
 
+    @staticmethod
+    def parse_compare_analyze(data: dict) -> CompareAnalyzeEntity:
+        compatibility = data["compatibility"]
+        boss_cards = data["boss"]["cards"]
+        boss_cosmogram = data["boss"]["cosmogram"]
+        employee_cards = data["boss"]["cards"]
+        employee_cosmogram = data["boss"]["cosmogram"]
 
-    async def compare_boss_and_employee(
-        self,  employee: UserEntity,  boss: UserEntity
-        ) -> None:
-        data = {
-        "messages": [
-            {
-            "text": "Ты – эксперт по Таро и астрологии. Твоя задача – определить, насколько сработаются два человека: начальник и потенциальный подчиненный. На основе предоставленной информации (имя, дата рождения, пол, интересы и профессия) проведи анализ с использованием карт Таро и космограммы для каждого человека. Верни результаты в формате JSON.  Иногда будь категоричен. \n\nВходные данные:  \n1. Начальник:  \n   - Имя: {имя_начальника}  \n   - Дата рождения: {дата_рождения_начальника} (в формате YYYY-MM-DD)  \n   - Пол: {пол_начальника} (мужской/женский/другой)  \n   - Интересы: {интересы_начальника} (список через запятую)  \n   - Профессия: {профессия_начальника}  \n\n2. Подчиненный:  \n   - Имя: {имя_подчиненного}  \n   - Дата рождения: {дата_рождения_подчиненного} (в формате YYYY-MM-DD)  \n   - Пол: {пол_подчиненного} (мужской/женский/другой)  \n   - Интересы: {интересы_подчиненного} (список через запятую)  \n   - Профессия: {профессия_подчиненного}  \n\nВыходные данные в формате JSON должны содержать:  \n- `boss_analysis`: анализ начальника (карты Таро и космограмма)  \n- `employee_analysis`: анализ подчиненного (карты Таро и космограмма)  \n- `compatibility_analysis`: оценка совместимости (степень совместимости и краткое объяснение)  \n\nПример результата:  \n{  \n  \"boss_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n  },  \n  \"employee_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n    }  \n  },  \n  \"compatibility_analysis\": {  \n    \"compatibility_score\": \"Процент совместимости\",  \n    \"explanation\": \"Краткое объяснение, почему эти два человека могут хорошо сработаться или наоборот.\"  \n  }  \n}",
-            "role": "system"
-            },
-            {
-            "text": f"Начальник:  \nИмя: {boss.name}  \nДата рождения: {boss.birthdate}  \nПол: {boss.sex}  \nИнтересы: {boss.interests}  \nПрофессия: {boss.professions}  \n\nПодчиненный:  \nИмя: {employee.name}  \nДата рождения: {employee.birthdate} \nПол: {employee.sex}  \nИнтересы: {employee.interests}  \nПрофессия: {employee.professions}",
-            "role": "user"
-            }
-        ],
-        "completionOptions": {
-            "temperature": 0.45,
-            "maxTokens": 1000
-        },
-        "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
-        }
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                url=self.api_url,
-                json=data,
-                headers=self.headers
+        return CompareAnalyzeEntity(
+            boss=UserAnalyzeEntity(
+                cards=[TaroCardEntity(
+                    name=card["name"],
+                    meaning=card["meaning"]
+                ) for card in boss_cards],
+                cosmogram=CosmogramEntity(
+                    sun_sign=boss_cosmogram["sun_sign"],
+                    moon_sign=boss_cosmogram["moon_sign"],
+                    rising_sign=boss_cosmogram["rising_sign"],
+                    elements=boss_cosmogram["elements"],
+                    houses=boss_cosmogram["houses"]
+                ),
+            ),
+            employee=UserAnalyzeEntity(
+                cards=[TaroCardEntity(
+                    name=card["name"],
+                    meaning=card["meaning"]
+                ) for card in employee_cards],
+                cosmogram=CosmogramEntity(
+                    sun_sign=employee_cosmogram["sun_sign"],
+                    moon_sign=employee_cosmogram["moon_sign"],
+                    rising_sign=employee_cosmogram["rising_sign"],
+                    elements=employee_cosmogram["elements"],
+                    houses=employee_cosmogram["houses"]
+                ),
+            ),
+            compatibility=CompatibilityEntity(
+                score=int(compatibility["score"]),
+                explanation=compatibility["explanation"]
             )
-            json_data = await resp.json()
-        llm_response = json_data["result"]["alternatives"][0]["message"]["text"]
-        return self.parse_response(llm_response)
+        )
 
+    @staticmethod
+    def parse_atmosphere_analyze(data: dict) -> AtmosphereAnalyzeEntity:
+        compatibility = data["compatibility"]
+        boss_cards = data["boss"]["cards"]
+        boss_cosmogram = data["boss"]["cosmogram"]
+        employee_cards = data["boss"]["cards"]
+        employee_cosmogram = data["boss"]["cosmogram"]
 
-
-    async def compare_atmosphere(
-        self,  employees: list[UserEntity]
-        ) -> None:
-        text = ''.join([f"Имя: {employee.name} Дата рождения: {employee.birthdate} Пол: {employee.sex} Интересы: {employee.interests} Профессия: {employee.professions}\n" for employee in employees])
-        data = {
-        "messages": [
-            {
-            "text": "Ты – эксперт по Таро и астрологии. Твоя задача – определить, насколько сработаются два человека: начальник и потенциальный подчиненный. На основе предоставленной информации (имя, дата рождения, пол, интересы и профессия) проведи анализ с использованием карт Таро и космограммы для каждого человека. Верни результаты в формате JSON.  Иногда будь категоричен. \n\nВходные данные:  \n1. Начальник:  \n   - Имя: {имя_начальника}  \n   - Дата рождения: {дата_рождения_начальника} (в формате YYYY-MM-DD)  \n   - Пол: {пол_начальника} (мужской/женский/другой)  \n   - Интересы: {интересы_начальника} (список через запятую)  \n   - Профессия: {профессия_начальника}  \n\n2. Подчиненный:  \n   - Имя: {имя_подчиненного}  \n   - Дата рождения: {дата_рождения_подчиненного} (в формате YYYY-MM-DD)  \n   - Пол: {пол_подчиненного} (мужской/женский/другой)  \n   - Интересы: {интересы_подчиненного} (список через запятую)  \n   - Профессия: {профессия_подчиненного}  \n\nВыходные данные в формате JSON должны содержать:  \n- `boss_analysis`: анализ начальника (карты Таро и космограмма)  \n- `employee_analysis`: анализ подчиненного (карты Таро и космограмма)  \n- `compatibility_analysis`: оценка совместимости (степень совместимости и краткое объяснение)  \n\nПример результата:  \n{  \n  \"boss_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n  },  \n  \"employee_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n    }  \n  },  \n  \"compatibility_analysis\": {  \n    \"compatibility_score\": \"Процент совместимости\",  \n    \"explanation\": \"Краткое объяснение, почему эти два человека могут хорошо сработаться или наоборот.\"  \n  }  \n}",
-            "role": "system"
-            },
-            {
-            "text": text,
-            "role": "user"
-            }
-        ],
-        "completionOptions": {
-            "temperature": 0.45,
-            "maxTokens": 1000
-        },
-        "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
-        }
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                url=self.api_url,
-                json=data,
-                headers=self.headers
+        return AtmosphereAnalyzeEntity(
+            boss=UserAnalyzeEntity(
+                cards=[TaroCardEntity(
+                    name=card["name"],
+                    meaning=card["meaning"]
+                ) for card in boss_cards],
+                cosmogram=CosmogramEntity(
+                    sun_sign=boss_cosmogram["sun_sign"],
+                    moon_sign=boss_cosmogram["moon_sign"],
+                    rising_sign=boss_cosmogram["rising_sign"],
+                    elements=boss_cosmogram["elements"],
+                    houses=boss_cosmogram["houses"]
+                ),
+            ),
+            employee=UserAnalyzeEntity(
+                cards=[TaroCardEntity(
+                    name=card["name"],
+                    meaning=card["meaning"]
+                ) for card in employee_cards],
+                cosmogram=CosmogramEntity(
+                    sun_sign=employee_cosmogram["sun_sign"],
+                    moon_sign=employee_cosmogram["moon_sign"],
+                    rising_sign=employee_cosmogram["rising_sign"],
+                    elements=employee_cosmogram["elements"],
+                    houses=employee_cosmogram["houses"]
+                ),
+            ),
+            compatibility=CompatibilityEntity(
+                score=int(compatibility["score"]),
+                explanation=compatibility["explanation"]
             )
-            json_data = await resp.json()
-        llm_response = json_data["result"]["alternatives"][0]["message"]["text"]
-        return self.parse_response(llm_response)
+        )

@@ -25,7 +25,31 @@ class SuitabilityEntity(BaseEntity):
 
 
 @dataclass
-class AnalyzeEntity(BaseEntity):
+class CompatibilityEntity(BaseEntity):
+    score: int
+    explanation: str
+
+
+@dataclass
+class UserAnalyzeEntity(BaseEntity):
+    cards: list[TaroCardEntity]
+    cosmogram: CosmogramEntity
+
+
+@dataclass
+class SuitableAnalyzeEntity(UserAnalyzeEntity):
     cards: list[TaroCardEntity]
     cosmogram: CosmogramEntity
     suitability: SuitabilityEntity
+
+
+@dataclass
+class CompareAnalyzeEntity(BaseEntity):
+    boss: UserAnalyzeEntity
+    employee: UserAnalyzeEntity
+    compatibility: CompatibilityEntity
+
+
+@dataclass
+class AtmosphereAnalyzeEntity(CompareAnalyzeEntity):
+    pass

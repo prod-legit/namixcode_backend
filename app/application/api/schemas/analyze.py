@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-from app.domain.entities.analyze import AnalyzeEntity, TaroCardEntity, CosmogramEntity, SuitabilityEntity
+from app.domain.entities.analyze import TaroCardEntity, CosmogramEntity, SuitabilityEntity, \
+    CompareAnalyzeEntity, SuitableAnalyzeEntity, CompatibilityEntity, UserAnalyzeEntity
 
 
 class TaroCardSchema(BaseModel):
@@ -39,15 +40,52 @@ class SuitabilitySchema(BaseModel):
         return cls(is_suitable=entity.is_suitable, explanation=entity.explanation)
 
 
-class AnalyzeSchema(BaseModel):
+class CompatibilitySchema(BaseModel):
+    score: int
+    explanation: str
+
+    @classmethod
+    def from_entity(cls, entity: CompatibilityEntity) -> "CompatibilitySchema":
+        return cls(score=entity.score, explanation=entity.explanation)
+
+
+class UserAnalyzeSchema(BaseModel):
     cards: list[TaroCardSchema]
     cosmogram: CosmogramSchema
+
+    @classmethod
+    def from_entity(cls, entity: UserAnalyzeEntity) -> "UserAnalyzeSchema":
+        return cls(
+            cards=[TaroCardSchema.from_entity(card) for card in entity.cards],
+            cosmogram=CosmogramSchema.from_entity(entity.cosmogram)
+        )
+
+
+class SuitableAnalyzeSchema(UserAnalyzeSchema):
     suitability: SuitabilitySchema
 
     @classmethod
-    def from_entity(cls, entity: AnalyzeEntity) -> "AnalyzeSchema":
+    def from_entity(cls, entity: SuitableAnalyzeEntity) -> "SuitableAnalyzeSchema":
         return cls(
             cards=[TaroCardSchema.from_entity(card) for card in entity.cards],
             cosmogram=CosmogramSchema.from_entity(entity.cosmogram),
             suitability=SuitabilitySchema.from_entity(entity.suitability)
         )
+
+
+class CompareAnalyzeSchema(BaseModel):
+    boss: UserAnalyzeSchema
+    employee: UserAnalyzeSchema
+    compatibility: CompatibilitySchema
+
+    @classmethod
+    def from_entity(cls, entity: CompareAnalyzeEntity) -> "CompareAnalyzeSchema":
+        return cls(
+            boss=UserAnalyzeSchema.from_entity(entity.boss),
+            employee=UserAnalyzeSchema.from_entity(entity.employee),
+            compatibility=CompatibilitySchema.from_entity(entity.compatibility)
+        )
+
+
+class AtmosphereAnalyzeSchema(CompareAnalyzeSchema):
+    pass

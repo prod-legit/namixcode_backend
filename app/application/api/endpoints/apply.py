@@ -6,12 +6,13 @@ from fastapi import APIRouter, Path
 from pydantic import UUID4
 
 from app.application.api.dependencies import CurrentUserDep, CurrentOrgDep
-from app.application.api.schemas.analyze import AnalyzeSchema
+from app.application.api.schemas.analyze import SuitableAnalyzeSchema, CompareAnalyzeSchema, AtmosphereAnalyzeSchema
 from app.application.api.schemas.apply import ApplySchema, CreateApplySchema, AcceptApplySchema
 from app.application.api.schemas.status import StatusSchema
 from app.infrastructure.services.gpt_tarologue import IGPTTarologue
 from app.logic.commands.apply.accept_apply import AcceptApplyUseCase, AcceptApplyCommand
 from app.logic.commands.apply.create_apply import CreateApplyUseCase, CreateApplyCommand
+from app.logic.queries.employee.get_org_employees import GetOrgEmployeesUseCase, GetOrgEmployeesQuery
 from app.logic.queries.user.get_user import GetUserUseCase, GetUserQuery
 
 router = APIRouter(
@@ -41,27 +42,9 @@ async def make_apply(
     return ApplySchema.from_entity(apply)
 
 
-@router.get(
-    path="/{user_id}",
-    summary="Получить анализ пользователя по таро",
-    operation_id="analyzeUserTaro",
-    response_model=AnalyzeSchema
-)
-async def analyze_user_taro(
-        current_org: CurrentOrgDep,
-        user_id: Annotated[UUID4, Path()],
-        get_user: FromDishka[GetUserUseCase],
-        gpt_tarologue: FromDishka[IGPTTarologue]
-) -> AnalyzeSchema:
-    user = await get_user.execute(GetUserQuery(user_id=user_id))
-    analyze = await gpt_tarologue.analyze(user)
-
-    return AnalyzeSchema.from_entity(analyze)
-
-
 @router.post(
     path="/{user_id}/accept",
-    summary="Получить анализ пользователя по таро",
+    summary="Принять на работу",
     operation_id="acceptApply",
     response_model=StatusSchema
 )
@@ -77,3 +60,58 @@ async def accept_user_apply(
         head_id=data.head_id
     ))
     return StatusSchema.success("User applied")
+
+
+@router.post(
+    path="/suitability/{user_id}",
+    summary="Подходит ли пользователь по таро",
+    operation_id="userSuitabilityTaro",
+    response_model=SuitableAnalyzeSchema
+)
+async def suitability_user_taro(
+        current_org: CurrentOrgDep,
+        user_id: Annotated[UUID4, Path()],
+        get_user: FromDishka[GetUserUseCase],
+        gpt_tarologue: FromDishka[IGPTTarologue]
+) -> SuitableAnalyzeSchema:
+    user = await get_user.execute(GetUserQuery(user_id=user_id))
+    analyze = await gpt_tarologue.suitable_analyze(user)
+
+    return SuitableAnalyzeSchema.from_entity(analyze)
+
+
+@router.post(
+    path="/compare/{user_id}/{boss_id}",
+    summary="Подходит ли пользователь к начальнику по таро",
+    operation_id="compareUserBossTaro",
+    response_model=CompareAnalyzeSchema
+)
+async def compare_user_boss_taro(
+        current_org: CurrentOrgDep,
+        user_id: Annotated[UUID4, Path()],
+        boss_id: Annotated[UUID4, Path()],
+        get_user: FromDishka[GetUserUseCase],
+        gpt_tarologue: FromDishka[IGPTTarologue]
+) -> CompareAnalyzeSchema:
+    user = await get_user.execute(GetUserQuery(user_id=user_id))
+    boss = await get_user.execute(GetUserQuery(user_id=boss_id))
+    analyze = await gpt_tarologue.compare_analyze(user=user, boss=boss)
+
+    return CompareAnalyzeSchema.from_entity(analyze)
+
+
+@router.post(
+    path="/atmosphere",
+    summary="Оценка атмосферы в команде по таро",
+    operation_id="atmosphereTaro",
+    response_model=AtmosphereAnalyzeSchema
+)
+async def compare_user_boss_taro(
+        current_org: CurrentOrgDep,
+        get_employees: FromDishka[GetOrgEmployeesUseCase],
+        gpt_tarologue: FromDishka[IGPTTarologue]
+) -> AtmosphereAnalyzeSchema:
+    employees = await get_employees.execute(GetOrgEmployeesQuery(org_id=current_org.id))
+    analyze = await gpt_tarologue.atmosphere_analyze(users=[employee.user for employee in employees])
+
+    return AtmosphereAnalyzeSchema.from_entity(analyze)
