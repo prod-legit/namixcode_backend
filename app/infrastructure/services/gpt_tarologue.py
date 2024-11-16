@@ -133,7 +133,7 @@ class YandexGPTTarologue(IGPTTarologue):
             ],
             "completionOptions": {
                 "Stream": False,
-                "temperature": 0.5,
+                "temperature": 0.4,
                 "maxTokens": 1000
             },
             "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
@@ -248,7 +248,7 @@ class YandexGPTTarologue(IGPTTarologue):
                 }
             ],
             "completionOptions": {
-                "temperature": 0.45,
+                "temperature": 0.4,
                 "maxTokens": 1000
             },
             "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
@@ -278,7 +278,7 @@ class YandexGPTTarologue(IGPTTarologue):
             }
         ],
         "completionOptions": {
-            "temperature": 0.45,
+            "temperature": 0.4,
             "maxTokens": 1000
         },
         "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
