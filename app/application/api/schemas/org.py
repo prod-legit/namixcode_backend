@@ -37,3 +37,8 @@ class CreateOrgSchema(BaseModel):
     logo: str
     foundation_year: int
     scope: str
+
+
+class LoginOrgSchema(BaseModel):
+    email: EmailStr
+    password: str

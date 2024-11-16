@@ -39,3 +39,12 @@ class AuthTokenExpired(InvalidAuthTokenException):
 
     def __str__(self) -> str:
         return f"The token `{self.token}` has expired at {self.expired_at}"
+
+
+@dataclass(eq=False, frozen=True)
+class InvalidAuthCredentialsException(AuthException):
+    email: str
+    password: str
+
+    def __str__(self) -> str:
+        return f"Email or password is invalid"

@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 
 from app.application.api.schemas.status import StatusSchema
 from app.domain.exceptions.base import AppException
+from app.logic.exceptions.auth import AuthException
 from app.logic.exceptions.base import (
     AccessForbiddenException,
     ObjectExistsException,
@@ -20,6 +21,8 @@ def get_http_code(exc: AppException) -> int:
         return status.HTTP_409_CONFLICT
     elif isinstance(exc, AccessForbiddenException):
         return status.HTTP_403_FORBIDDEN
+    elif isinstance(exc, AuthException):
+        return status.HTTP_401_UNAUTHORIZED
     return status.HTTP_400_BAD_REQUEST
 
 

@@ -5,10 +5,11 @@ from fastapi import APIRouter
 from app.application.api.dependencies import CurrentOrgDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
-from app.application.api.schemas.org import CreateOrgSchema, OrgSchema
+from app.application.api.schemas.org import CreateOrgSchema, OrgSchema, LoginOrgSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.org.create_org import CreateOrgUseCase, CreateOrgCommand
 from app.logic.queries.apply.get_org_applies import GetOrgAppliesUseCase, GetOrgAppliesQuery
+from app.logic.queries.org.get_org_auth import GetOrgAuthQuery, GetOrgAuthUseCase
 from app.logic.queries.org.get_orgs import GetOrgsUseCase, GetOrgsQuery
 
 router = APIRouter(
@@ -39,6 +40,26 @@ async def register_org(
         logo=data.logo,
         foundation_year=data.foundation_year,
         scope=data.scope
+    ))
+    token = await generate_jwt.execute(GenerateJWTCommand(sub=org.id))
+
+    return AuthToken(token=token)
+
+
+@router.post(
+    path="/login",
+    summary="Вход организации",
+    operation_id="loginOrg",
+    response_model=AuthToken
+)
+async def login_org(
+        data: LoginOrgSchema,
+        auth_org: FromDishka[GetOrgAuthUseCase],
+        generate_jwt: FromDishka[GenerateJWTUseCase]
+) -> AuthToken:
+    org = await auth_org.execute(GetOrgAuthQuery(
+        email=data.email,
+        password=data.password
     ))
     token = await generate_jwt.execute(GenerateJWTCommand(sub=org.id))
 

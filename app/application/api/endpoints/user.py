@@ -5,10 +5,11 @@ from fastapi import APIRouter
 from app.application.api.dependencies import CurrentUserDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
-from app.application.api.schemas.user import CreateUserSchema, UserSchema
+from app.application.api.schemas.user import CreateUserSchema, UserSchema, LoginUserSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.user.create_user import CreateUserUseCase, CreateUserCommand
 from app.logic.queries.apply.get_user_applies import GetUserAppliesUseCase, GetUserAppliesQuery
+from app.logic.queries.user.get_user_auth import GetUserAuthUseCase, GetUserAuthQuery
 
 router = APIRouter(
     prefix="/user",
@@ -39,6 +40,25 @@ async def register_user(
         experience=data.experience,
         professions=data.professions,
         interests=data.interests
+    ))
+    token = await generate_jwt.execute(GenerateJWTCommand(sub=user.id))
+
+    return AuthToken(token=token)
+
+@router.post(
+    path="/login",
+    summary="Вход пользователя",
+    operation_id="loginUser",
+    response_model=AuthToken
+)
+async def login_user(
+        data: LoginUserSchema,
+        auth_user: FromDishka[GetUserAuthUseCase],
+        generate_jwt: FromDishka[GenerateJWTUseCase]
+) -> AuthToken:
+    user = await auth_user.execute(GetUserAuthQuery(
+        email=data.email,
+        password=data.password
     ))
     token = await generate_jwt.execute(GenerateJWTCommand(sub=user.id))
 

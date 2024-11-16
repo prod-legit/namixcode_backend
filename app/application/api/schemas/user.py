@@ -43,3 +43,8 @@ class CreateUserSchema(BaseModel):
     experience: int
     professions: list[str]
     interests: list[str]
+
+
+class LoginUserSchema(BaseModel):
+    email: EmailStr
+    password: str
