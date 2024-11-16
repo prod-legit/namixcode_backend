@@ -3,6 +3,8 @@ from dishka import Provider, provide, Scope
 from app.infrastructure.repositories.apply import SQLAlchemyApplyRepository, IApplyRepository
 from app.infrastructure.repositories.org import IOrgRepository, SQLAlchemyOrgRepository
 from app.infrastructure.repositories.user import SQLAlchemyUserRepository, IUserRepository
+from app.infrastructure.services.gpt_tarologue import YandexGPTTarologue, IGPTTarologue
+from app.settings import Settings
 
 
 class InfrastructureProvider(Provider):
@@ -21,3 +23,11 @@ class InfrastructureProvider(Provider):
         scope=Scope.REQUEST,
         provides=IUserRepository
     )
+
+    @provide(scope=Scope.APP)
+    def gpt_tarologue(self, settings: Settings) -> IGPTTarologue:
+        return YandexGPTTarologue(
+            api_url=settings.yagpt.URL,
+            api_key=settings.yagpt.KEY,
+            folder_id=settings.yagpt.FOLDER
+        )

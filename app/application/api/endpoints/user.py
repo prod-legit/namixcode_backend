@@ -3,10 +3,12 @@ from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter
 
 from app.application.api.dependencies import CurrentUserDep
+from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
 from app.application.api.schemas.user import CreateUserSchema, UserSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.user.create_user import CreateUserUseCase, CreateUserCommand
+from app.logic.queries.apply.get_user_applies import GetUserAppliesUseCase, GetUserAppliesQuery
 
 router = APIRouter(
     prefix="/user",
@@ -51,3 +53,17 @@ async def register_user(
 )
 async def get_current_user(current_user: CurrentUserDep) -> UserSchema:
     return UserSchema.from_entity(current_user)
+
+
+@router.get(
+    path="/applies",
+    summary="Получить отклики текущего пользователя",
+    operation_id="getCurrentUserApplies",
+    response_model=list[ApplySchema]
+)
+async def get_current_user_applies(
+        current_user: CurrentUserDep,
+        get_user_applies: FromDishka[GetUserAppliesUseCase]
+) -> list[ApplySchema]:
+    applies = await get_user_applies.execute(GetUserAppliesQuery(user_id=current_user.id))
+    return [ApplySchema.from_entity(apply) for apply in applies]

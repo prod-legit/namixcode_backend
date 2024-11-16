@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, EmailStr
 
 from app.domain.entities.user import UserEntity
 from app.domain.values.user import SexEnum
@@ -33,7 +33,7 @@ class UserSchema(BaseModel):
 
 
 class CreateUserSchema(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
     name: str

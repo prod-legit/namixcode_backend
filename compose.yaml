@@ -23,6 +23,8 @@ services:
       - DATABASE_USER=${DATABASE_USER:?}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:?}
       - JWT_SECRET=${JWT_SECRET:?}
+      - YAGPT_KEY=${YAGPT_KEY:?}
+      - YAGPT_FOLDER=${YAGPT_FOLDER:?}
 
   db:
     image: postgres:16

@@ -23,11 +23,18 @@ class DatabaseSettings(BaseModel):
         ).render_as_string(hide_password=False)
 
 
+class YandexGPTSettings(BaseModel):
+    URL: str = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+    KEY: str
+    FOLDER: str
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="_")
 
     SERVICE_PORT: int = 8000
     database: DatabaseSettings
+    yagpt: YandexGPTSettings
 
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"

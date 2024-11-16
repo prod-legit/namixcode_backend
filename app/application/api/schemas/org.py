@@ -5,7 +5,7 @@ from app.domain.entities.org import OrgEntity
 
 class OrgSchema(BaseModel):
     id: UUID4
-    email: EmailStr
+    email: str
     name: str
     description: str
     location: str
