@@ -25,7 +25,7 @@ class CreateOrgUseCase(IUseCase[OrgEntity]):
     org_repository: IOrgRepository
 
     async def execute(self, command: CreateOrgCommand) -> OrgEntity:
-        if await self.org_repository.get_by_email(command.email):
+        if await self.org_repository.check_exists_by_email(command.email):
             raise OrgExistsException(command.email)
 
         org = OrgEntity(

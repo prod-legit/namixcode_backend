@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.org import OrgEntity
@@ -22,6 +22,9 @@ class IOrgRepository(ABC):
 
     @abstractmethod
     async def get_by_email(self, email: str) -> OrgEntity | None: ...
+
+    @abstractmethod
+    async def check_exists_by_email(self, email: str) -> bool: ...
 
     @abstractmethod
     async def delete(self, id_: str) -> None: ...
@@ -48,6 +51,10 @@ class SQLAlchemyOrgRepository(IOrgRepository):
         stmt = select(OrgORM).where(OrgORM.email == email)
         if db_org := await self.session.scalar(stmt):
             return OrgORMMapper.to_entity(db_org)
+
+    async def check_exists_by_email(self, email: str) -> bool:
+        stmt = select(exists(OrgORM)).where(OrgORM.email == email)
+        return await self.session.scalar(stmt)
 
     async def delete(self, id_: str) -> None:
         stmt = delete(OrgORM).where(OrgORM.id == id_)

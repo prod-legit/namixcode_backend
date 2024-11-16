@@ -8,7 +8,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.domain.entities.org import OrgEntity
 from app.domain.entities.user import UserEntity
 from app.logic.commands.auth.decode_jwt import DecodeJWTCommand, DecodeJWTUseCase
-from app.logic.exceptions.auth import EmptyAuthTokenException
+from app.logic.exceptions.auth import EmptyAuthTokenException, InvalidAuthTokenException
+from app.logic.exceptions.org import OrgNotFoundException
+from app.logic.exceptions.user import UserNotFoundException
 from app.logic.queries.org.get_org import GetOrgQuery, GetOrgUseCase
 from app.logic.queries.user.get_user import GetUserUseCase, GetUserQuery
 
@@ -26,7 +28,10 @@ async def get_current_org(
         raise EmptyAuthTokenException()
 
     jwt_data = await decode_jwt.execute(DecodeJWTCommand(token=token.credentials))
-    org = await get_org.execute(GetOrgQuery(org_id=jwt_data.sub))
+    try:
+        org = await get_org.execute(GetOrgQuery(org_id=jwt_data.sub))
+    except OrgNotFoundException:
+        raise InvalidAuthTokenException(token.credentials)
 
     return org
 
@@ -47,7 +52,10 @@ async def get_current_user(
         raise EmptyAuthTokenException()
 
     jwt_data = await decode_jwt.execute(DecodeJWTCommand(token=token.credentials))
-    user = await get_user.execute(GetUserQuery(user_id=jwt_data.sub))
+    try:
+        user = await get_user.execute(GetUserQuery(user_id=jwt_data.sub))
+    except UserNotFoundException:
+        raise InvalidAuthTokenException(token.credentials)
 
     return user
 

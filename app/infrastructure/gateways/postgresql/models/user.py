@@ -1,9 +1,13 @@
 from datetime import date
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.gateways.postgresql.models.base import BaseORM, IDMixin
+
+if TYPE_CHECKING:
+    from app.infrastructure.gateways.postgresql.models import EmployeeORM
 
 
 class UserProfessionORM(BaseORM, IDMixin):
@@ -34,3 +38,5 @@ class UserORM(BaseORM, IDMixin):
 
     professions: Mapped[list[UserProfessionORM]] = relationship(UserProfessionORM, backref="user")
     interests: Mapped[list[UserInterestORM]] = relationship(UserInterestORM, backref="user")
+
+    employments: Mapped[list["EmployeeORM"]] = relationship(back_populates="user")

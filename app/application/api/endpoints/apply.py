@@ -7,8 +7,10 @@ from pydantic import UUID4
 
 from app.application.api.dependencies import CurrentUserDep, CurrentOrgDep
 from app.application.api.schemas.analyze import AnalyzeSchema
-from app.application.api.schemas.apply import ApplySchema, CreateApplySchema
+from app.application.api.schemas.apply import ApplySchema, CreateApplySchema, AcceptApplySchema
+from app.application.api.schemas.status import StatusSchema
 from app.infrastructure.services.gpt_tarologue import IGPTTarologue
+from app.logic.commands.apply.accept_apply import AcceptApplyUseCase, AcceptApplyCommand
 from app.logic.commands.apply.create_apply import CreateApplyUseCase, CreateApplyCommand
 from app.logic.queries.user.get_user import GetUserUseCase, GetUserQuery
 
@@ -55,3 +57,23 @@ async def analyze_user_taro(
     analyze = await gpt_tarologue.analyze(user)
 
     return AnalyzeSchema.from_entity(analyze)
+
+
+@router.post(
+    path="/{user_id}/accept",
+    summary="Получить анализ пользователя по таро",
+    operation_id="acceptApply",
+    response_model=StatusSchema
+)
+async def accept_user_apply(
+        current_org: CurrentOrgDep,
+        user_id: Annotated[UUID4, Path()],
+        data: AcceptApplySchema,
+        accept_apply: FromDishka[AcceptApplyUseCase]
+) -> StatusSchema:
+    await accept_apply.execute(AcceptApplyCommand(
+        org_id=current_org.id,
+        user_id=user_id,
+        head_id=data.head_id
+    ))
+    return StatusSchema.success("User applied")

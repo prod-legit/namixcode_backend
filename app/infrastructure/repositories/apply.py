@@ -1,18 +1,22 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, exists
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from app.domain.entities.apply import ApplyEntity
 from app.infrastructure.gateways.postgresql.mappers.apply import ApplyORMMapper
-from app.infrastructure.gateways.postgresql.models import ApplyORM
+from app.infrastructure.gateways.postgresql.models import ApplyORM, UserORM
 
 
 @dataclass(eq=False, frozen=True)
 class IApplyRepository(ABC):
     @abstractmethod
     async def create(self, entity: ApplyEntity) -> None: ...
+
+    @abstractmethod
+    async def check_exists(self, org_id: str, user_id: str) -> bool: ...
 
     @abstractmethod
     async def get(self, org_id: str, user_id: str) -> ApplyEntity | None: ...
@@ -35,12 +39,27 @@ class SQLAlchemyApplyRepository(IApplyRepository):
         db_apply = ApplyORMMapper.from_entity(entity)
         self.session.add(db_apply)
 
+    async def check_exists(self, org_id: str, user_id: str) -> bool:
+        stmt = (
+            select(exists(ApplyORM))
+            .where(
+                ApplyORM.org_id == org_id,
+                ApplyORM.user_id == user_id
+            )
+        )
+        return await self.session.scalar(stmt)
+
     async def get(self, org_id: str, user_id: str) -> ApplyEntity | None:
         stmt = (
             select(ApplyORM)
             .where(
                 ApplyORM.org_id == org_id,
                 ApplyORM.user_id == user_id
+            )
+            .options(
+                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.user).selectinload(UserORM.interests),
+                joinedload(ApplyORM.user).selectinload(UserORM.professions)
             )
         )
         if db_apply := await self.session.scalar(stmt):
@@ -50,6 +69,10 @@ class SQLAlchemyApplyRepository(IApplyRepository):
         stmt = (
             select(ApplyORM)
             .where(ApplyORM.user_id == user_id)
+            .options(
+                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.user).selectinload(UserORM.interests),
+                joinedload(ApplyORM.user).selectinload(UserORM.professions))
         )
         db_applies = await self.session.scalars(stmt)
         return [ApplyORMMapper.to_entity(db_apply) for db_apply in db_applies]
@@ -58,6 +81,10 @@ class SQLAlchemyApplyRepository(IApplyRepository):
         stmt = (
             select(ApplyORM)
             .where(ApplyORM.org_id == org_id)
+            .options(
+                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.user).selectinload(UserORM.interests),
+                joinedload(ApplyORM.user).selectinload(UserORM.professions))
         )
         db_applies = await self.session.scalars(stmt)
         return [ApplyORMMapper.to_entity(db_apply) for db_apply in db_applies]

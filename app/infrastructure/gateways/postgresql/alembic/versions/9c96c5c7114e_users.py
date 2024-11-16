@@ -22,7 +22,6 @@ def upgrade() -> None:
     op.create_table(
         "users",
         sa.Column("id", sa.UUID(as_uuid=False), nullable=False),
-
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("hashed_password", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
@@ -35,6 +34,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "applies",
+        sa.Column("id", sa.UUID(as_uuid=False), nullable=False),
         sa.Column("org_id", sa.UUID(as_uuid=False), nullable=False),
         sa.Column("user_id", sa.UUID(as_uuid=False), nullable=False),
         sa.Column("date", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
@@ -50,7 +50,8 @@ def upgrade() -> None:
             name=op.f("fk_applies_user_id_users"),
             ondelete="CASCADE"
         ),
-        sa.PrimaryKeyConstraint("org_id", "user_id", name=op.f("pk_applies"))
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_applies")),
+        sa.UniqueConstraint("id", name=op.f("uq_applies_id"))
     )
     op.create_table(
         "user_interests",

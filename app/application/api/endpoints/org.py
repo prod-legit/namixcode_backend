@@ -5,10 +5,12 @@ from fastapi import APIRouter
 from app.application.api.dependencies import CurrentOrgDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
+from app.application.api.schemas.employee import EmployeeSchema
 from app.application.api.schemas.org import CreateOrgSchema, OrgSchema, LoginOrgSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.org.create_org import CreateOrgUseCase, CreateOrgCommand
 from app.logic.queries.apply.get_org_applies import GetOrgAppliesUseCase, GetOrgAppliesQuery
+from app.logic.queries.employee.get_org_employees import GetOrgEmployeesUseCase, GetOrgEmployeesQuery
 from app.logic.queries.org.get_org_auth import GetOrgAuthQuery, GetOrgAuthUseCase
 from app.logic.queries.org.get_orgs import GetOrgsUseCase, GetOrgsQuery
 
@@ -90,7 +92,7 @@ async def list_orgs(get_orgs: FromDishka[GetOrgsUseCase]) -> list[OrgSchema]:
 @router.get(
     path="/applies",
     summary="Получить список откликов",
-    operation_id="listApplies",
+    operation_id="listOrgApplies",
     response_model=list[ApplySchema]
 )
 async def get_org_applies(
@@ -99,3 +101,17 @@ async def get_org_applies(
 ) -> list[ApplySchema]:
     applies = await get_applies.execute(GetOrgAppliesQuery(current_org.id))
     return [ApplySchema.from_entity(apply) for apply in applies]
+
+
+@router.get(
+    path="/employees",
+    summary="Получить сотрудников",
+    operation_id="listOrgEmployees",
+    response_model=list[EmployeeSchema]
+)
+async def get_org_employees(
+        current_org: CurrentOrgDep,
+        get_employees: FromDishka[GetOrgEmployeesUseCase]
+) -> list[EmployeeSchema]:
+    employees = await get_employees.execute(GetOrgEmployeesQuery(current_org.id))
+    return [EmployeeSchema.from_entity(employee) for employee in employees]

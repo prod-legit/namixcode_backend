@@ -5,10 +5,12 @@ from fastapi import APIRouter
 from app.application.api.dependencies import CurrentUserDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
+from app.application.api.schemas.employee import EmployeeSchema
 from app.application.api.schemas.user import CreateUserSchema, UserSchema, LoginUserSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.user.create_user import CreateUserUseCase, CreateUserCommand
 from app.logic.queries.apply.get_user_applies import GetUserAppliesUseCase, GetUserAppliesQuery
+from app.logic.queries.employee.get_user_employments import GetUserEmploymentsUseCase, GetUserEmploymentsQuery
 from app.logic.queries.user.get_user_auth import GetUserAuthUseCase, GetUserAuthQuery
 
 router = APIRouter(
@@ -44,6 +46,7 @@ async def register_user(
     token = await generate_jwt.execute(GenerateJWTCommand(sub=user.id))
 
     return AuthToken(token=token)
+
 
 @router.post(
     path="/login",
@@ -87,3 +90,17 @@ async def get_current_user_applies(
 ) -> list[ApplySchema]:
     applies = await get_user_applies.execute(GetUserAppliesQuery(user_id=current_user.id))
     return [ApplySchema.from_entity(apply) for apply in applies]
+
+
+@router.get(
+    path="/employments",
+    summary="Получить работодателей",
+    operation_id="listUserEmployments",
+    response_model=list[EmployeeSchema]
+)
+async def get_current_user_employments(
+        current_user: CurrentUserDep,
+        get_employments: FromDishka[GetUserEmploymentsUseCase]
+) -> list[EmployeeSchema]:
+    employments = await get_employments.execute(GetUserEmploymentsQuery(current_user.id))
+    return [EmployeeSchema.from_entity(employment) for employment in employments]

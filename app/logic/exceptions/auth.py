@@ -22,7 +22,7 @@ class InvalidAuthTokenException(AuthException):
     token: str
 
     def __str__(self) -> str:
-        return f"The token `{self.token}` is not JWT"
+        return f"The token `{self.token} is invalid`"
 
 
 @dataclass(eq=False, frozen=True)

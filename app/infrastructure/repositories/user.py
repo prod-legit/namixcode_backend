@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,9 @@ class IUserRepository(ABC):
 
     @abstractmethod
     async def get_by_email(self, email: str) -> UserEntity | None: ...
+
+    @abstractmethod
+    async def check_exists_by_email(self, email: str) -> bool: ...
 
     @abstractmethod
     async def delete(self, id_: str) -> None: ...
@@ -56,6 +59,13 @@ class SQLAlchemyUserRepository(IUserRepository):
         )
         if db_user := await self.session.scalar(stmt):
             return UserORMMapper.to_entity(db_user)
+
+    async def check_exists_by_email(self, email: str) -> bool:
+        stmt = (
+            select(exists(UserORM))
+            .where(UserORM.email == email)
+        )
+        return await self.session.scalar(stmt)
 
     async def delete(self, id_: str) -> None:
         stmt = delete(UserORM).where(UserORM.id == id_)

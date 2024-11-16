@@ -27,7 +27,7 @@ class CreateUserUseCase(IUseCase[UserEntity]):
     user_repository: IUserRepository
 
     async def execute(self, command: CreateUserCommand) -> UserEntity:
-        if await self.user_repository.get_by_email(command.email):
+        if await self.user_repository.check_exists_by_email(command.email):
             raise UserExistsException(command.email)
 
         user = UserEntity(
