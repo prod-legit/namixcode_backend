@@ -135,3 +135,34 @@ class YandexGPTTarologue(IGPTTarologue):
                 explanation=data["suitability"]["explanation"],
             )
         )
+
+
+    async def compare_boss_and_employee(
+        self,  employee: UserEntity,  boss: UserEntity
+        ) -> None:
+        data = {
+        "messages": [
+            {
+            "text": "Ты – эксперт по Таро и астрологии. Твоя задача – определить, насколько сработаются два человека: начальник и потенциальный подчиненный. На основе предоставленной информации (имя, дата рождения, пол, интересы и профессия) проведи анализ с использованием карт Таро и космограммы для каждого человека. Верни результаты в формате JSON.  Иногда будь категоричен. \n\nВходные данные:  \n1. Начальник:  \n   - Имя: {имя_начальника}  \n   - Дата рождения: {дата_рождения_начальника} (в формате YYYY-MM-DD)  \n   - Пол: {пол_начальника} (мужской/женский/другой)  \n   - Интересы: {интересы_начальника} (список через запятую)  \n   - Профессия: {профессия_начальника}  \n\n2. Подчиненный:  \n   - Имя: {имя_подчиненного}  \n   - Дата рождения: {дата_рождения_подчиненного} (в формате YYYY-MM-DD)  \n   - Пол: {пол_подчиненного} (мужской/женский/другой)  \n   - Интересы: {интересы_подчиненного} (список через запятую)  \n   - Профессия: {профессия_подчиненного}  \n\nВыходные данные в формате JSON должны содержать:  \n- `boss_analysis`: анализ начальника (карты Таро и космограмма)  \n- `employee_analysis`: анализ подчиненного (карты Таро и космограмма)  \n- `compatibility_analysis`: оценка совместимости (степень совместимости и краткое объяснение)  \n\nПример результата:  \n{  \n  \"boss_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n  },  \n  \"employee_analysis\": {  \n    \"tarot_reading\": {  \n      \"card_1\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      },  \n      \"card_2\": {  \n        \"name\": \"Название карты\",  \n        \"meaning\": \"Толкование карты\"  \n      }  \n    },  \n    \"cosmogram\": {  \n      \"sun_sign\": \"Знак Солнца\",  \n      \"moon_sign\": \"Знак Луны\",  \n      \"rising_sign\": \"Асцендент\",  \n      \"elements\": {  \n        \"fire\": \"Количество планет в огненных знаках\",  \n        \"earth\": \"Количество планет в земных знаках\",  \n        \"air\": \"Количество планет в воздушных знаках\",  \n        \"water\": \"Количество планет в водных знаках\"  \n      }  \n     \"houses\": {  \n      \"house_1\": \"Описание первого дома\",  \n      \"house_2\": \"Описание второго дома\"  \n      \"house_3\": \"Описание третьего дома\"  \n    }  \n    }  \n  },  \n  \"compatibility_analysis\": {  \n    \"compatibility_score\": \"Процент совместимости\",  \n    \"explanation\": \"Краткое объяснение, почему эти два человека могут хорошо сработаться или наоборот.\"  \n  }  \n}",
+            "role": "system"
+            },
+            {
+            "text": f"Начальник:  \nИмя: {boss.name}  \nДата рождения: {boss.birthdate}  \nПол: {boss.sex}  \nИнтересы: {boss.interests}  \nПрофессия: {boss.professions}  \n\nПодчиненный:  \nИмя: {employee.name}  \nДата рождения: {employee.birthdate} \nПол: {employee.sex}  \nИнтересы: {employee.interests}  \nПрофессия: {employee.professions}",
+            "role": "user"
+            }
+        ],
+        "completionOptions": {
+            "temperature": 0.45,
+            "maxTokens": 1000
+        },
+        "modelUri": "gpt://b1g0jtim007tq3pnsog3/yandexgpt/rc"
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url=self.api_url,
+                json=data,
+                headers=self.headers
+            )
+            json_data = await resp.json()
+        llm_response = json_data["result"]["alternatives"][0]["message"]["text"]
+        return self.parse_response(llm_response)
