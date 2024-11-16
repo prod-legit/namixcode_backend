@@ -6,10 +6,10 @@ from app.logic.exceptions.base import ObjectExistsException, ObjectNotFoundExcep
 @dataclass(eq=False, frozen=True)
 class EmployeeExistsException(ObjectExistsException):
     user_id: str
-    org_id: str
+    job_id: str
 
     def __str__(self) -> str:
-        return f"Employee user<{self.user_id}> for org<{self.org_id}> already exists"
+        return f"Employee user<{self.user_id}> for job<{self.job_id}> already exists"
 
 
 @dataclass(eq=False, frozen=True)

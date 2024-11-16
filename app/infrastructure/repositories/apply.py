@@ -7,7 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from app.domain.entities.apply import ApplyEntity
 from app.infrastructure.gateways.postgresql.mappers.apply import ApplyORMMapper
-from app.infrastructure.gateways.postgresql.models import ApplyORM, UserORM
+from app.infrastructure.gateways.postgresql.models import ApplyORM, UserORM, JobORM
 
 
 @dataclass(eq=False, frozen=True)
@@ -16,10 +16,10 @@ class IApplyRepository(ABC):
     async def create(self, entity: ApplyEntity) -> None: ...
 
     @abstractmethod
-    async def check_exists(self, org_id: str, user_id: str) -> bool: ...
+    async def check_exists(self, job_id: str, user_id: str) -> bool: ...
 
     @abstractmethod
-    async def get(self, org_id: str, user_id: str) -> ApplyEntity | None: ...
+    async def get(self, job_id: str, user_id: str) -> ApplyEntity | None: ...
 
     @abstractmethod
     async def get_by_user_id(self, id_: str) -> list[ApplyEntity]: ...
@@ -28,7 +28,7 @@ class IApplyRepository(ABC):
     async def get_by_org_id(self, org_id: str) -> list[ApplyEntity]: ...
 
     @abstractmethod
-    async def delete(self, org_id: str, user_id: str) -> None: ...
+    async def delete(self, id_: str) -> None: ...
 
 
 @dataclass(eq=False, frozen=True)
@@ -39,25 +39,25 @@ class SQLAlchemyApplyRepository(IApplyRepository):
         db_apply = ApplyORMMapper.from_entity(entity)
         self.session.add(db_apply)
 
-    async def check_exists(self, org_id: str, user_id: str) -> bool:
+    async def check_exists(self, job_id: str, user_id: str) -> bool:
         stmt = (
             select(exists(ApplyORM))
             .where(
-                ApplyORM.org_id == org_id,
+                ApplyORM.job_id == job_id,
                 ApplyORM.user_id == user_id
             )
         )
         return await self.session.scalar(stmt)
 
-    async def get(self, org_id: str, user_id: str) -> ApplyEntity | None:
+    async def get(self, job_id: str, user_id: str) -> ApplyEntity | None:
         stmt = (
             select(ApplyORM)
             .where(
-                ApplyORM.org_id == org_id,
+                ApplyORM.job_id == job_id,
                 ApplyORM.user_id == user_id
             )
             .options(
-                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.job).joinedload(JobORM.org),
                 joinedload(ApplyORM.user).selectinload(UserORM.interests),
                 joinedload(ApplyORM.user).selectinload(UserORM.professions)
             )
@@ -70,7 +70,7 @@ class SQLAlchemyApplyRepository(IApplyRepository):
             select(ApplyORM)
             .where(ApplyORM.user_id == user_id)
             .options(
-                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.job).joinedload(JobORM.org),
                 joinedload(ApplyORM.user).selectinload(UserORM.interests),
                 joinedload(ApplyORM.user).selectinload(UserORM.professions))
         )
@@ -80,18 +80,15 @@ class SQLAlchemyApplyRepository(IApplyRepository):
     async def get_by_org_id(self, org_id: str) -> list[ApplyEntity]:
         stmt = (
             select(ApplyORM)
-            .where(ApplyORM.org_id == org_id)
+            .where(JobORM.org_id == org_id)
             .options(
-                joinedload(ApplyORM.org),
+                joinedload(ApplyORM.job).joinedload(JobORM.org),
                 joinedload(ApplyORM.user).selectinload(UserORM.interests),
                 joinedload(ApplyORM.user).selectinload(UserORM.professions))
         )
         db_applies = await self.session.scalars(stmt)
         return [ApplyORMMapper.to_entity(db_apply) for db_apply in db_applies]
 
-    async def delete(self, org_id: str, user_id: str) -> None:
-        stmt = delete(ApplyORM).where(
-            ApplyORM.org_id == org_id,
-            ApplyORM.user_id == user_id
-        )
+    async def delete(self, id_: str) -> None:
+        stmt = delete(ApplyORM).where(ApplyORM.id == id_)
         await self.session.execute(stmt)

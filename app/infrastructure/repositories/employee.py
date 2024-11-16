@@ -1,13 +1,13 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.domain.entities.employee import EmployeeEntity
 from app.infrastructure.gateways.postgresql.mappers.employee import EmployeeORMMapper
-from app.infrastructure.gateways.postgresql.models import EmployeeORM, UserORM
+from app.infrastructure.gateways.postgresql.models import EmployeeORM, UserORM, JobORM
 
 
 @dataclass(eq=False, frozen=True)
@@ -16,10 +16,10 @@ class IEmployeeRepository(ABC):
     async def create(self, entity: EmployeeEntity) -> None: ...
 
     @abstractmethod
-    async def check_exists(self, org_id: str, user_id: str) -> bool: ...
+    async def check_exists(self, job_id: str, user_id: str) -> bool: ...
 
     @abstractmethod
-    async def get(self, org_id: str, user_id: str) -> EmployeeEntity | None: ...
+    async def get(self, job_id: str, user_id: str) -> EmployeeEntity | None: ...
 
     @abstractmethod
     async def get_by_user_id(self, id_: str) -> list[EmployeeEntity]: ...
@@ -39,25 +39,25 @@ class SQLAlchemyEmployeeRepository(IEmployeeRepository):
         db_employee = EmployeeORMMapper.from_entity(entity)
         self.session.add(db_employee)
 
-    async def check_exists(self, org_id: str, user_id: str) -> bool:
+    async def check_exists(self, job_id: str, user_id: str) -> bool:
         stmt = (
-            select(select(EmployeeORM))
+            select(exists(EmployeeORM))
             .where(
-                EmployeeORM.org_id == org_id,
+                EmployeeORM.job_id == job_id,
                 EmployeeORM.user_id == user_id
             )
         )
         return await self.session.scalar(stmt)
 
-    async def get(self, org_id: str, user_id: str) -> EmployeeEntity | None:
+    async def get(self, job_id: str, user_id: str) -> EmployeeEntity | None:
         stmt = (
             select(EmployeeORM)
             .where(
-                EmployeeORM.org_id == org_id,
+                EmployeeORM.job_id == job_id,
                 EmployeeORM.user_id == user_id
             )
             .options(
-                joinedload(EmployeeORM.org),
+                joinedload(EmployeeORM.job).joinedload(JobORM.org),
                 joinedload(EmployeeORM.user).selectinload(UserORM.professions),
                 joinedload(EmployeeORM.user).selectinload(UserORM.interests),
                 joinedload(EmployeeORM.head).joinedload(EmployeeORM.user).selectinload(UserORM.professions),
@@ -74,7 +74,7 @@ class SQLAlchemyEmployeeRepository(IEmployeeRepository):
             select(EmployeeORM)
             .where(EmployeeORM.user_id == user_id)
             .options(
-                joinedload(EmployeeORM.org),
+                joinedload(EmployeeORM.job).joinedload(JobORM.org),
                 joinedload(EmployeeORM.user).selectinload(UserORM.professions),
                 joinedload(EmployeeORM.user).selectinload(UserORM.interests),
                 joinedload(EmployeeORM.head).joinedload(EmployeeORM.user).selectinload(UserORM.professions),
@@ -89,9 +89,9 @@ class SQLAlchemyEmployeeRepository(IEmployeeRepository):
     async def get_by_org_id(self, org_id: str) -> list[EmployeeEntity]:
         stmt = (
             select(EmployeeORM)
-            .where(EmployeeORM.org_id == org_id)
+            .where(JobORM.org_id == org_id)
             .options(
-                joinedload(EmployeeORM.org),
+                joinedload(EmployeeORM.job).joinedload(JobORM.org),
                 joinedload(EmployeeORM.user).selectinload(UserORM.professions),
                 joinedload(EmployeeORM.user).selectinload(UserORM.interests),
                 joinedload(EmployeeORM.head).joinedload(EmployeeORM.user).selectinload(UserORM.professions),
@@ -103,9 +103,9 @@ class SQLAlchemyEmployeeRepository(IEmployeeRepository):
         db_applies = await self.session.scalars(stmt)
         return [EmployeeORMMapper.to_entity(db_employee) for db_employee in db_applies]
 
-    async def delete(self, org_id: str, user_id: str) -> None:
+    async def delete(self, job_id: str, user_id: str) -> None:
         stmt = delete(EmployeeORM).where(
-            EmployeeORM.org_id == org_id,
+            EmployeeORM.job_id == job_id,
             EmployeeORM.user_id == user_id
         )
         await self.session.execute(stmt)

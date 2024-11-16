@@ -2,6 +2,7 @@ from dishka import Provider, provide, Scope
 
 from app.infrastructure.repositories.apply import SQLAlchemyApplyRepository, IApplyRepository
 from app.infrastructure.repositories.employee import SQLAlchemyEmployeeRepository, IEmployeeRepository
+from app.infrastructure.repositories.job import IJobRepository, SQLAlchemyJobRepository
 from app.infrastructure.repositories.org import IOrgRepository, SQLAlchemyOrgRepository
 from app.infrastructure.repositories.user import SQLAlchemyUserRepository, IUserRepository
 from app.infrastructure.services.gpt_tarologue import YandexGPTTarologue, IGPTTarologue
@@ -28,6 +29,11 @@ class InfrastructureProvider(Provider):
         SQLAlchemyEmployeeRepository,
         scope=Scope.REQUEST,
         provides=IEmployeeRepository
+    )
+    job_repository = provide(
+        SQLAlchemyJobRepository,
+        scope=Scope.REQUEST,
+        provides=IJobRepository
     )
 
     @provide(scope=Scope.APP)

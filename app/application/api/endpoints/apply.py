@@ -35,7 +35,7 @@ async def make_apply(
         create_apply: FromDishka[CreateApplyUseCase]
 ) -> ApplySchema:
     apply = await create_apply.execute(CreateApplyCommand(
-        org_id=str(data.org_id),
+        job_id=str(data.job_id),
         user_id=current_user.id
     ))
 
@@ -55,7 +55,7 @@ async def accept_user_apply(
         accept_apply: FromDishka[AcceptApplyUseCase]
 ) -> StatusSchema:
     await accept_apply.execute(AcceptApplyCommand(
-        org_id=current_org.id,
+        # job_id=current_org.id,
         user_id=user_id,
         head_id=data.head_id
     ))

@@ -142,7 +142,7 @@ class YandexGPTTarologue(IGPTTarologue):
 
         return self.parse_suitable_analyze(llm_response)
 
-    async def compare_analyze(self, employee: UserEntity, boss: UserEntity) -> CompareAnalyzeEntity:
+    async def compare_analyze(self, user: UserEntity, boss: UserEntity) -> CompareAnalyzeEntity:
         data = {
             "messages": [
                 {
@@ -239,11 +239,11 @@ class YandexGPTTarologue(IGPTTarologue):
                             f"Интересы: {boss.interests}  \n"
                             f"Профессия: {boss.professions}  \n\n"
                             f"Подчиненный:  \n"
-                            f"Имя: {employee.name}  \n"
-                            f"Дата рождения: {employee.birthdate} \n"
-                            f"Пол: {employee.sex}  \n"
-                            f"Интересы: {employee.interests}  \n"
-                            f"Профессия: {employee.professions}",
+                            f"Имя: {user.name}  \n"
+                            f"Дата рождения: {user.birthdate} \n"
+                            f"Пол: {user.sex}  \n"
+                            f"Интересы: {user.interests}  \n"
+                            f"Профессия: {user.professions}",
                     "role": "user"
                 }
             ],

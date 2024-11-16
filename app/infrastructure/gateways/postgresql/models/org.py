@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.infrastructure.gateways.postgresql.models.base import BaseORM, IDMixin
 
 if TYPE_CHECKING:
-    from app.infrastructure.gateways.postgresql.models import EmployeeORM, ApplyORM
+    from app.infrastructure.gateways.postgresql.models import ApplyORM, JobORM
 
 
 class OrgORM(BaseORM, IDMixin):
@@ -21,5 +21,4 @@ class OrgORM(BaseORM, IDMixin):
     foundation_year: Mapped[int]
     scope: Mapped[str]
 
-    employees: Mapped[list["EmployeeORM"]] = relationship(back_populates="org")
-    applies: Mapped[list["ApplyORM"]] = relationship(back_populates="org")
+    jobs: Mapped[list["JobORM"]] = relationship(back_populates="org")

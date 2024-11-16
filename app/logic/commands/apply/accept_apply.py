@@ -12,7 +12,7 @@ from app.logic.exceptions.employee import EmployeeNotFoundException, EmployeeExi
 
 @dataclass(frozen=True)
 class AcceptApplyCommand(ICommand):
-    org_id: str
+    job_id: str
     user_id: str
     head_id: str | None
 
@@ -24,26 +24,26 @@ class AcceptApplyUseCase(IUseCase[ApplyEntity]):
     org_repository: IOrgRepository
 
     async def execute(self, command: AcceptApplyCommand) -> None:
-        apply = await self.apply_repository.get(org_id=command.org_id, user_id=command.user_id)
+        apply = await self.apply_repository.get(job_id=command.job_id, user_id=command.user_id)
         if not apply:
-            raise ApplyNotFoundException(org_id=command.org_id, user_id=command.user_id)
+            raise ApplyNotFoundException(job_id=command.job_id, user_id=command.user_id)
 
         if await self.employee_repository.check_exists(
-                org_id=command.org_id,
+                job_id=command.job_id,
                 user_id=command.user_id
         ):
-            raise EmployeeExistsException(org_id=command.org_id, user_id=command.user_id)
+            raise EmployeeExistsException(job_id=command.job_id, user_id=command.user_id)
 
         head = None
         if command.head_id is not None:
-            head = await self.employee_repository.get(org_id=command.org_id, user_id=command.head_id)
+            head = await self.employee_repository.get(job_id=command.job_id, user_id=command.head_id)
             if not head:
                 raise EmployeeNotFoundException(command.head_id)
 
         employee = EmployeeEntity(
-            org=apply.org,
+            job=apply.job,
             user=apply.user,
             head=head
         )
         await self.employee_repository.create(employee)
-        await self.apply_repository.delete(org_id=command.org_id, user_id=command.user_id)
+        await self.apply_repository.delete(apply.id)

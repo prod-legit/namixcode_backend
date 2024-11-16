@@ -6,11 +6,14 @@ from app.application.api.dependencies import CurrentOrgDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
 from app.application.api.schemas.employee import EmployeeSchema
+from app.application.api.schemas.job import JobSchema, CreateJobSchema
 from app.application.api.schemas.org import CreateOrgSchema, OrgSchema, LoginOrgSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
+from app.logic.commands.job.create_job import CreateJobUseCase, CreateJobCommand
 from app.logic.commands.org.create_org import CreateOrgUseCase, CreateOrgCommand
 from app.logic.queries.apply.get_org_applies import GetOrgAppliesUseCase, GetOrgAppliesQuery
 from app.logic.queries.employee.get_org_employees import GetOrgEmployeesUseCase, GetOrgEmployeesQuery
+from app.logic.queries.job.get_org_jobs import GetOrgJobsUseCase, GetOrgJobsQuery
 from app.logic.queries.org.get_org_auth import GetOrgAuthQuery, GetOrgAuthUseCase
 from app.logic.queries.org.get_orgs import GetOrgsUseCase, GetOrgsQuery
 
@@ -115,3 +118,37 @@ async def get_org_employees(
 ) -> list[EmployeeSchema]:
     employees = await get_employees.execute(GetOrgEmployeesQuery(current_org.id))
     return [EmployeeSchema.from_entity(employee) for employee in employees]
+
+
+@router.get(
+    path="/jobs",
+    summary="Получить вакансии",
+    operation_id="listOrgJobs",
+    response_model=list[JobSchema]
+)
+async def get_org_jobs(
+        current_org: CurrentOrgDep,
+        get_jobs: FromDishka[GetOrgJobsUseCase]
+) -> list[JobSchema]:
+    jobs = await get_jobs.execute(GetOrgJobsQuery(current_org.id))
+    return [JobSchema.from_entity(job) for job in jobs]
+
+
+@router.post(
+    path="/job",
+    summary="Создать вакансию",
+    operation_id="createJob",
+    response_model=JobSchema
+)
+async def create_org_job(
+        current_org: CurrentOrgDep,
+        data: CreateJobSchema,
+        create_job: FromDishka[CreateJobUseCase]
+) -> JobSchema:
+    job = await create_job.execute(CreateJobCommand(
+        org_id=current_org.id,
+        title=data.title,
+        description=data.description,
+        pay=data.pay
+    ))
+    return JobSchema.from_entity(job)

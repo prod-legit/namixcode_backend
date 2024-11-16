@@ -7,7 +7,7 @@ from app.domain.entities.employee import EmployeeEntity
 
 
 class EmployeeSchema(BaseModel):
-    org_id: UUID4
+    job_id: UUID4
     user: UserSchema
     head: "EmployeeSchema | None"
     slaves: list["EmployeeSchema"]
@@ -16,7 +16,7 @@ class EmployeeSchema(BaseModel):
     @classmethod
     def from_entity(cls, entity: EmployeeEntity) -> "EmployeeSchema":
         return cls(
-            org_id=entity.org.id,
+            job_id=entity.job.id,
             user=UserSchema.from_entity(entity.user),
             head=EmployeeSchema.from_entity(entity.head) if entity.head else None,
             slaves=[EmployeeSchema.from_entity(slave) for slave in entity.slaves],

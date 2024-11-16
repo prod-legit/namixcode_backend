@@ -6,11 +6,13 @@ from app.application.api.dependencies import CurrentUserDep
 from app.application.api.schemas.apply import ApplySchema
 from app.application.api.schemas.auth import AuthToken
 from app.application.api.schemas.employee import EmployeeSchema
+from app.application.api.schemas.job import JobSchema
 from app.application.api.schemas.user import CreateUserSchema, UserSchema, LoginUserSchema
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase, GenerateJWTCommand
 from app.logic.commands.user.create_user import CreateUserUseCase, CreateUserCommand
 from app.logic.queries.apply.get_user_applies import GetUserAppliesUseCase, GetUserAppliesQuery
 from app.logic.queries.employee.get_user_employments import GetUserEmploymentsUseCase, GetUserEmploymentsQuery
+from app.logic.queries.job.get_jobs import GetJobsQuery, GetJobsUseCase
 from app.logic.queries.user.get_user_auth import GetUserAuthUseCase, GetUserAuthQuery
 
 router = APIRouter(
@@ -104,3 +106,14 @@ async def get_current_user_employments(
 ) -> list[EmployeeSchema]:
     employments = await get_employments.execute(GetUserEmploymentsQuery(current_user.id))
     return [EmployeeSchema.from_entity(employment) for employment in employments]
+
+
+@router.get(
+    path="/jobs",
+    summary="Получить доступные вакансии",
+    operation_id="listAvailableJobs",
+    response_model=list[JobSchema]
+)
+async def get_available_jobs(get_jobs: FromDishka[GetJobsUseCase]) -> list[JobSchema]:
+    jobs = await get_jobs.execute(GetJobsQuery())
+    return [JobSchema.from_entity(job) for job in jobs]

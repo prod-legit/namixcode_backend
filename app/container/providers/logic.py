@@ -4,12 +4,15 @@ from app.logic.commands.apply.accept_apply import AcceptApplyUseCase
 from app.logic.commands.apply.create_apply import CreateApplyUseCase
 from app.logic.commands.auth.decode_jwt import DecodeJWTUseCase
 from app.logic.commands.auth.generate_jwt import GenerateJWTUseCase
+from app.logic.commands.job.create_job import CreateJobUseCase
 from app.logic.commands.org.create_org import CreateOrgUseCase
 from app.logic.commands.user.create_user import CreateUserUseCase
 from app.logic.queries.apply.get_org_applies import GetOrgAppliesUseCase
 from app.logic.queries.apply.get_user_applies import GetUserAppliesUseCase
 from app.logic.queries.employee.get_org_employees import GetOrgEmployeesUseCase
 from app.logic.queries.employee.get_user_employments import GetUserEmploymentsUseCase
+from app.logic.queries.job.get_jobs import GetJobsUseCase
+from app.logic.queries.job.get_org_jobs import GetOrgJobsUseCase
 from app.logic.queries.org.get_org import GetOrgUseCase
 from app.logic.queries.org.get_org_auth import GetOrgAuthUseCase
 from app.logic.queries.org.get_orgs import GetOrgsUseCase
@@ -36,6 +39,10 @@ class LogicProvider(Provider):
     accept_apply_use_case = provide(AcceptApplyUseCase, scope=Scope.REQUEST)
     get_org_employees_use_case = provide(GetOrgEmployeesUseCase, scope=Scope.REQUEST)
     get_user_employments_use_case = provide(GetUserEmploymentsUseCase, scope=Scope.REQUEST)
+
+    get_org_jobs_use_case = provide(GetOrgJobsUseCase, scope=Scope.REQUEST)
+    get_jobs_use_case = provide(GetJobsUseCase, scope=Scope.REQUEST)
+    create_job_use_case = provide(CreateJobUseCase, scope=Scope.REQUEST)
 
     @provide(scope=Scope.APP)
     def generate_jwt_user_case(self, settings: Settings) -> GenerateJWTUseCase:
