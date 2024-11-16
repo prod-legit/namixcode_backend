@@ -6,6 +6,7 @@ LABEL description="Namixcode backend image"
 
 ARG WORK_DIR
 ARG APP_USER
+ENV PORT=8000
 
 ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -41,7 +42,8 @@ USER $APP_USER
 
 EXPOSE 8000
 
-ENTRYPOINT ["python", "-m", "app"]
+ENTRYPOINT ["uvicorn", "--factory", "app.__main__:create_app", "--host", "0.0.0.0"]
+CMD ["--port", "8000"]
 
 FROM prod AS dev
 LABEL description="Namixcode backend image (dev)"
