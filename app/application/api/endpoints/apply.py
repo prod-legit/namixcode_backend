@@ -101,6 +101,50 @@ async def compare_user_boss_taro(
 
 
 @router.post(
+    path="/compare_collective/{user_id}",
+    summary="Подходит ли пользователь коллективу",
+    operation_id="compareUserCollectiveTaro",
+    response_model=CompareAnalyzeSchema
+)
+async def compare_user_collective(
+        current_org: CurrentOrgDep,
+        user_id: Annotated[UUID4, Path()],
+        get_user: FromDishka[GetUserUseCase],
+        gpt_tarologue: FromDishka[IGPTTarologue]
+) -> CompareAnalyzeSchema:
+    user = await get_user.execute(GetUserQuery(user_id=user_id))
+    workers = await get_user.execute(GetOrgEmployeesQuery(org_id=current_org.id))
+    #for i in 
+    analyze = await gpt_tarologue.compare_analyze(user=user, boss=boss)
+
+    return CompareAnalyzeSchema.from_entity(analyze)
+from typing import List
+
+@router.post(
+    path="/compare_collective/{user_id}",
+    summary="Подходит ли пользователь коллективу",
+    operation_id="compareUserCollectiveTaro",
+    response_model=List[CompareAnalyzeSchema]
+)
+async def compare_user_collective(
+        current_org: CurrentOrgDep,
+        user_id: Annotated[UUID4, Path()],
+        get_user: FromDishka[GetUserUseCase],
+        get_employees: FromDishka[GetOrgEmployeesUseCase],
+        gpt_tarologue: FromDishka[IGPTTarologue]
+) -> List[CompareAnalyzeSchema]:
+    user = await get_user.execute(GetUserQuery(user_id=user_id))
+    employees = await get_employees.execute(GetOrgEmployeesQuery(org_id=current_org.id))
+
+    analyses = []
+    for employee in employees:
+        analysis = await gpt_tarologue.compare_analyze(user=user, boss=employee.user)
+        analyses.append(CompareAnalyzeSchema.from_entity(analysis))
+
+    return analyses
+
+
+@router.post(
     path="/atmosphere",
     summary="Оценка атмосферы в команде по таро",
     operation_id="atmosphereTaro",

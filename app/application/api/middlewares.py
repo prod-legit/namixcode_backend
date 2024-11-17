@@ -3,7 +3,6 @@ from fastapi.encoders import jsonable_encoder
 from starlette import status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import JSONResponse
-
 from app.application.api.schemas.status import StatusSchema
 from app.domain.exceptions.base import AppException
 from app.logic.exceptions.auth import AuthException
