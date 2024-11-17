@@ -6,7 +6,7 @@ from fastapi import APIRouter, Path
 from pydantic import UUID4
 
 from app.application.api.dependencies import CurrentUserDep, CurrentOrgDep
-from app.application.api.schemas.analyze import SuitableAnalyzeSchema, CompareAnalyzeSchema, AtmosphereAnalyzeSchema
+from app.application.api.schemas.analyze import SuitableAnalyzeSchema, CompareAnalyzeSchema, AtmosphereAnalyzeSchema, CompareListSchema
 from app.application.api.schemas.apply import ApplySchema, CreateApplySchema, AcceptApplySchema
 from app.application.api.schemas.status import StatusSchema
 from app.infrastructure.services.gpt_tarologue import IGPTTarologue
@@ -104,7 +104,7 @@ async def compare_user_boss_taro(
     path="/compare_collective/{user_id}",
     summary="Подходит ли пользователь коллективу",
     operation_id="compareUserCollectiveTaro",
-    response_model=list[CompareAnalyzeSchema]
+    response_model=CompareListSchema
 )
 async def compare_user_collective(
         current_org: CurrentOrgDep,
@@ -112,7 +112,7 @@ async def compare_user_collective(
         get_user: FromDishka[GetUserUseCase],
         get_employees: FromDishka[GetOrgEmployeesUseCase],
         gpt_tarologue: FromDishka[IGPTTarologue]
-) -> list[CompareAnalyzeSchema]:
+) -> CompareListSchema:
     user = await get_user.execute(GetUserQuery(user_id=user_id))
     employees = await get_employees.execute(GetOrgEmployeesQuery(org_id=current_org.id))
 
