@@ -74,9 +74,5 @@ jobs:
     if: ${{ github.ref == 'refs/heads/main'}}
     uses: ./.github/workflows/cd.yaml
     with:
-<<<<<<< HEAD
-      image_tag: ${{ needs.setup.outputs.tag }}
-=======
       image_tag: ${{ format('sha-{0}', github.sha) }}
->>>>>>> 881b349806d3674a9c3194534e06a41f4034d06f
     secrets: inherit
