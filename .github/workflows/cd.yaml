@@ -5,7 +5,7 @@ on:
     inputs:
       image_tag:
         description: "Image tag for deploy"
-        default: main
+        default: latest
         type: string
         required: false
 
