@@ -54,7 +54,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha,format=short
+            type=sha,format=long
             type=raw,latest
 
       - name: Build and push image
@@ -69,3 +69,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
+  deploy:
+    needs: build
+    if: ${{ github.ref == 'refs/heads/main'}}
+    uses: ./.github/workflows/cd.yaml
+    with:
+      image_tag: ${{ format('sha-{0}', github.sha) }}
+    secrets: inherit
