@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from app.domain.entities.analyze import TaroCardEntity, CosmogramEntity, SuitabilityEntity, \
-    CompareAnalyzeEntity, SuitableAnalyzeEntity, CompatibilityEntity, UserAnalyzeEntity
+    CompareAnalyzeEntity, SuitableAnalyzeEntity, CompatibilityEntity, UserAnalyzeEntity, CompareListEntity
 
 
 class TaroCardSchema(BaseModel):
@@ -84,6 +84,18 @@ class CompareAnalyzeSchema(BaseModel):
             boss=UserAnalyzeSchema.from_entity(entity.boss),
             employee=UserAnalyzeSchema.from_entity(entity.employee),
             compatibility=CompatibilitySchema.from_entity(entity.compatibility)
+        )
+
+
+class CompareListSchema(BaseModel):
+    best_match: CompareAnalyzeSchema
+    other_matches: list[CompareAnalyzeSchema]
+
+    @classmethod
+    def from_entity(cls, entity: CompareListEntity) -> "CompareListSchema":
+        return cls(
+            best_match=CompareAnalyzeSchema.from_entity(entity.best_match),
+            other_matches=[CompareAnalyzeSchema.from_entity(match) for match in entity.other_matches]
         )
 
 

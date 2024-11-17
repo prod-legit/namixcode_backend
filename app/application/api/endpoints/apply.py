@@ -104,27 +104,7 @@ async def compare_user_boss_taro(
     path="/compare_collective/{user_id}",
     summary="Подходит ли пользователь коллективу",
     operation_id="compareUserCollectiveTaro",
-    response_model=CompareAnalyzeSchema
-)
-async def compare_user_collective(
-        current_org: CurrentOrgDep,
-        user_id: Annotated[UUID4, Path()],
-        get_user: FromDishka[GetUserUseCase],
-        gpt_tarologue: FromDishka[IGPTTarologue]
-) -> CompareAnalyzeSchema:
-    user = await get_user.execute(GetUserQuery(user_id=user_id))
-    workers = await get_user.execute(GetOrgEmployeesQuery(org_id=current_org.id))
-    #for i in 
-    analyze = await gpt_tarologue.compare_analyze(user=user, boss=boss)
-
-    return CompareAnalyzeSchema.from_entity(analyze)
-from typing import List
-
-@router.post(
-    path="/compare_collective/{user_id}",
-    summary="Подходит ли пользователь коллективу",
-    operation_id="compareUserCollectiveTaro",
-    response_model=List[CompareAnalyzeSchema]
+    response_model=list[CompareAnalyzeSchema]
 )
 async def compare_user_collective(
         current_org: CurrentOrgDep,
@@ -132,7 +112,7 @@ async def compare_user_collective(
         get_user: FromDishka[GetUserUseCase],
         get_employees: FromDishka[GetOrgEmployeesUseCase],
         gpt_tarologue: FromDishka[IGPTTarologue]
-) -> List[CompareAnalyzeSchema]:
+) -> list[CompareAnalyzeSchema]:
     user = await get_user.execute(GetUserQuery(user_id=user_id))
     employees = await get_employees.execute(GetOrgEmployeesQuery(org_id=current_org.id))
 
@@ -140,8 +120,18 @@ async def compare_user_collective(
     for employee in employees:
         analysis = await gpt_tarologue.compare_analyze(user=user, boss=employee.user)
         analyses.append(CompareAnalyzeSchema.from_entity(analysis))
-
-    return analyses
+    best_employee = analyses[0]
+    best_score = best_employee.compatibility.score
+    for analysis in analyses:
+        if analysis.compatibility.score > best_score:
+            best_score = analysis.compatibility.score
+            best_employee = analysis
+    analyses.remove(best_employee)
+    result = {
+        "best_match": best_employee,
+        'other_matches': analyses
+    }
+    return result
 
 
 @router.post(

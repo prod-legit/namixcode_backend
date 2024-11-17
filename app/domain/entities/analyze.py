@@ -51,5 +51,11 @@ class CompareAnalyzeEntity(BaseEntity):
 
 
 @dataclass
+class CompareListEntity(BaseEntity):
+    best_match: CompareAnalyzeEntity
+    other_matches: list[CompareAnalyzeEntity]
+
+
+@dataclass
 class AtmosphereAnalyzeEntity(CompareAnalyzeEntity):
     pass
