@@ -1,0 +1,65 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag for deploy"
+        default: main
+        type: string
+        required: false
+
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Image tag for deploy"
+        type: string
+        required: true
+
+env:
+  RELEASE_NAME: starlink-backend
+  REGISTRY: ghcr.io
+  PULL_SECRET: ghcr-pull-secret-${{ github.run_id }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            helm
+      - name: Create kube config
+        run: |
+          mkdir -p $HOME/.kube/
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+      - name: Install helm
+        run: |
+          curl -LO https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz
+          tar -zxvf helm-v3.8.0-linux-amd64.tar.gz
+          mv linux-amd64/helm /usr/local/bin/helm
+          helm version
+      - name: Create pull token
+        run: |
+          kubectl create secret docker-registry ${{ env.PULL_SECRET }} \
+          --docker-server=${{ env.REGISTRY }} \
+          --docker-username=${{ github.repository_owner }} \
+          --docker-password=${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy
+        run: |
+          helm upgrade --install --atomic --timeout 1m ${{ env.RELEASE_NAME }} ./helm \
+            --set image.tag=${{ inputs.image_tag }} \
+            --set image.pullSecret=${{ env.PULL_SECRET }} \
+            --set ingress.domain=${{ secrets.DOMAIN }} \
+            --set ingress.tlsSecretName=${{ secrets.TLS_SECRET_NAME }} \
+            --set config.DATABASE_HOST=${{ secrets.DATABASE_HOST }} \
+            --set config.DATABASE_NAME=${{ secrets.DATABASE_NAME }} \
+            --set config.DATABASE_USER=${{ secrets.DATABASE_USER }} \
+            --set config.DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }} \
+            --set config.JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            --set config.YAGPT_KEY=${{ secrets.YAGPT_KEY }} \
+            --set config.YAGPT_FOLDER=${{ secrets.YAGPT_FOLDER }}
