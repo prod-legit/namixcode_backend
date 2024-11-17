@@ -1,7 +1,15 @@
 from pydantic import BaseModel
 
-from app.domain.entities.analyze import TaroCardEntity, CosmogramEntity, SuitabilityEntity, \
-    CompareAnalyzeEntity, SuitableAnalyzeEntity, CompatibilityEntity, UserAnalyzeEntity, CompareListEntity
+from app.domain.entities.analyze import (
+    TaroCardEntity,
+    CosmogramEntity,
+    SuitabilityEntity,
+    CompareAnalyzeEntity,
+    SuitableAnalyzeEntity,
+    CompatibilityEntity,
+    UserAnalyzeEntity,
+    CompareListEntity, EmployeeAtmosphereAnalyzeEntity, AtmosphereAnalyzeEntity
+)
 
 
 class TaroCardSchema(BaseModel):
@@ -50,12 +58,14 @@ class CompatibilitySchema(BaseModel):
 
 
 class UserAnalyzeSchema(BaseModel):
+    name: str
     cards: list[TaroCardSchema]
     cosmogram: CosmogramSchema
 
     @classmethod
     def from_entity(cls, entity: UserAnalyzeEntity) -> "UserAnalyzeSchema":
         return cls(
+            name=entity.name,
             cards=[TaroCardSchema.from_entity(card) for card in entity.cards],
             cosmogram=CosmogramSchema.from_entity(entity.cosmogram)
         )
@@ -67,6 +77,7 @@ class SuitableAnalyzeSchema(UserAnalyzeSchema):
     @classmethod
     def from_entity(cls, entity: SuitableAnalyzeEntity) -> "SuitableAnalyzeSchema":
         return cls(
+            name=entity.name,
             cards=[TaroCardSchema.from_entity(card) for card in entity.cards],
             cosmogram=CosmogramSchema.from_entity(entity.cosmogram),
             suitability=SuitabilitySchema.from_entity(entity.suitability)
@@ -99,5 +110,32 @@ class CompareListSchema(BaseModel):
         )
 
 
-class AtmosphereAnalyzeSchema(CompareAnalyzeSchema):
-    pass
+class EmployeeAtmosphereAnalyzeSchema(BaseModel):
+    name: str
+    main_analytics: str
+    compatibility_score: int
+    impact_on_atmosphere: str
+
+    @classmethod
+    def from_entity(cls, entity: EmployeeAtmosphereAnalyzeEntity) -> "EmployeeAtmosphereAnalyzeSchema":
+        return cls(
+            name=entity.name,
+            main_analytics=entity.main_analytics,
+            compatibility_score=entity.compatibility_score,
+            impact_on_atmosphere=entity.impact_on_atmosphere
+        )
+
+
+class AtmosphereAnalyzeSchema(BaseModel):
+    overall_analysis: str
+    employees: list[EmployeeAtmosphereAnalyzeSchema]
+
+    @classmethod
+    def from_entity(cls, entity: AtmosphereAnalyzeEntity) -> "AtmosphereAnalyzeSchema":
+        return cls(
+            overall_analysis=entity.overall_analysis,
+            employees=[
+                EmployeeAtmosphereAnalyzeSchema.from_entity(employee)
+                for employee in entity.employees
+            ]
+        )

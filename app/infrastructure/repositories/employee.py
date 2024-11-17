@@ -90,6 +90,7 @@ class SQLAlchemyEmployeeRepository(IEmployeeRepository):
         stmt = (
             select(EmployeeORM)
             .where(JobORM.org_id == org_id)
+            .join(JobORM)
             .options(
                 joinedload(EmployeeORM.job).joinedload(JobORM.org),
                 joinedload(EmployeeORM.user).selectinload(UserORM.professions),

@@ -10,7 +10,7 @@ from app.domain.entities.analyze import (
     TaroCardEntity,
     CompareAnalyzeEntity,
     AtmosphereAnalyzeEntity,
-    SuitableAnalyzeEntity, UserAnalyzeEntity, CompatibilityEntity
+    SuitableAnalyzeEntity, UserAnalyzeEntity, CompatibilityEntity, EmployeeAtmosphereAnalyzeEntity
 )
 from app.domain.entities.user import UserEntity
 
@@ -89,7 +89,9 @@ class YandexGPTTarologue(IGPTTarologue):
                             "- `suitability`: оценка того, насколько данный "
                             "человек подходит на указанную должность, с кратким объяснением.  "
                             "\n\nПример результата:  \n"
-                            "{  \n  \"cards\": [  \n"
+                            "{  "
+                            "    \"name\": \"Имя\","
+                            "\n  \"cards\": [  \n"
                             "    {  \n"
                             "      \"name\": \"Название карты 1\",  \n"
                             "      \"meaning\": \"Толкование карты 1\"  \n"
@@ -170,6 +172,7 @@ class YandexGPTTarologue(IGPTTarologue):
                             "- `compatibility`: оценка совместимости (степень совместимости и краткое объяснение)  \n\n"
                             "Пример результата:  \n"
                             "{  \n  \"boss\": {  \n"
+                            "    \"name\": \"Имя начальника\","
                             "    \"cards\": [  \n"
                             "      {  \n"
                             "        \"name\": \"Название карты\",  \n"
@@ -197,6 +200,7 @@ class YandexGPTTarologue(IGPTTarologue):
                             "    }  \n"
                             "  },  \n"
                             "  \"employee\": {  \n"
+                            "   \"name\": \"Имя подчиненного\","
                             "    \"cards\": [  \n"
                             "      {  \n"
                             "        \"name\": \"Название карты\",  \n"
@@ -232,17 +236,17 @@ class YandexGPTTarologue(IGPTTarologue):
                     "role": "system"
                 },
                 {
-                    "text": f"Начальник:  \n"
-                            f"Имя: {boss.name}  \n"
-                            f"Дата рождения: {boss.birthdate}  \n"
-                            f"Пол: {boss.sex}  \n"
-                            f"Интересы: {boss.interests}  \n"
-                            f"Профессия: {boss.professions}  \n\n"
-                            f"Подчиненный:  \n"
-                            f"Имя: {user.name}  \n"
-                            f"Дата рождения: {user.birthdate} \n"
-                            f"Пол: {user.sex}  \n"
-                            f"Интересы: {user.interests}  \n"
+                    "text": f"Начальник:"
+                            f"Имя: {boss.name}"
+                            f"Дата рождения: {boss.birthdate}"
+                            f"Пол: {boss.sex}"
+                            f"Интересы: {boss.interests}"
+                            f"Профессия: {boss.professions}"
+                            f"Подчиненный:"
+                            f"Имя: {user.name}"
+                            f"Дата рождения: {user.birthdate}"
+                            f"Пол: {user.sex}"
+                            f"Интересы: {user.interests}"
                             f"Профессия: {user.professions}",
                     "role": "user"
                 }
@@ -269,7 +273,71 @@ class YandexGPTTarologue(IGPTTarologue):
         data = {
         "messages": [
             {
-            "text": "Ты - эксперт в области анализа команды, использующий карты Таро и астрологические принципы для оценки атмосферы и взаимодействия между сотрудниками. Пожалуйста, проанализируй информацию о каждом из сотрудников и дай понимание общей атмосферы в коллективе, а также воздействие каждого сотрудника.  \n\nНа вход подаются данные о каждом сотруднике в следующем формате:  \n- имя  \n- дата рождения (в формате YYYY-MM-DD)  \n- пол  \n- интересы (через запятую)  \n- профессия  \n\nНа основе этих данных возвращай результат в формате JSON с двумя основными частями:  \n1. Общий анализ атмосферы в коллективе.  \n2. Список сотрудников с индивидуальным анализом.  \n\nВыходные данные должны иметь следующий формат:  \n\n{  \n  \"overall_analysis\": \"{общий анализ атмосферы в коллективе, основанный на Таро и астрологии. Опиши, какие энергии преобладают, какие отношения между сотрудниками являются особенно положительными или негативными, и какие проблемы могут возникнуть.}\",  \n  \"employees\": [  \n    {  \n      \"name\": \"{имя_сотрудника}\",  \n      \"main_analytics\": \"{подробный текстовый анализ на основе карт Таро и космограммы, объясняющий атмосферу, которую создает сотрудник, его сильные и слабые стороны, а также воздействие на коллектив}\",  \n      \"compatibility_score\": \"{процент_совместимости_сотрудника}\", // Например, \"75%\"  \n      \"impact_on_atmosphere\": \"{влияние сотрудника на атмосферу (позитивное/негативное)}\"  \n    },  \n    ...  \n  ]  \n}  \n\nПример структуры ответа:  \n\n{  \n  \"overall_analysis\": \"В коллективе ощущается баланс между творческой энергией и разумной аналитикой. Однако есть некоторые напряженные моменты, которые могут вылиться в конфликты, если не решить их вовремя. Карты показывают, что некоторые сотрудники, возможно, создают дисгармонию, тогда как другие выступают как источники вдохновения и поддержки. ...\",  \n  \"employees\": [  \n    {  \n      \"name\": \"Анна\",  \n      \"main_analytics\": \"Анна приносит в команду оптимизм и поддержку. Ее энергия, основанная на сочетании карт Таро, таких как 'Солнце' и 'Звезда', создает пространство для роста. Однако ей стоит быть на чеку, чтобы не перегрузить коллег своим энтузиазмом.\",  \n      \"compatibility_score\": \"85%\",  \n      \"impact_on_atmosphere\": \"позитивное\"  \n    },  \n    {  \n      \"name\": \"Сергей\",  \n      \"main_analytics\": \"Сергей, несмотря на свои сильные стороны как организатора, может создавать напряжение из-за своего перфекционизма. Карты указывают на то, что его высокие ожидания могут эмоционально подавлять других. Необходимо найти баланс.\",  \n      \"compatibility_score\": \"60%\",  \n      \"impact_on_atmosphere\": \"негативное\"  \n    },  \n    {  \n      \"name\": \"Мария\",  \n      \"main_analytics\": \"Мария демонстрирует лидирующие качества благодаря своим астрологическим аспектам, что способствует продуктивности. Тем не менее, ей стоит быть осторожной с критикой, чтобы не создавать барьеров в общении.\",  \n      \"compatibility_score\": \"75%\",  \n      \"impact_on_atmosphere\": \"позитивное\"  \n    }  \n  ]  \n}  \n\nТеперь, предоставь данные о сотрудниках, и я проведу анализ атмосферы в коллективе.",
+            "text": "Ты - эксперт в области анализа команды, "
+                    "использующий карты Таро и астрологические принципы для оценки атмосферы и взаимодействия между сотрудниками."
+                    " Пожалуйста, проанализируй информацию о каждом из сотрудников и дай понимание общей атмосферы в коллективе,"
+                    " а также воздействие каждого сотрудника.  \n\n"
+                    "На вход подаются данные о каждом сотруднике в следующем формате:  \n"
+                    "- имя  \n"
+                    "- дата рождения (в формате YYYY-MM-DD)  \n"
+                    "- пол  \n"
+                    "- интересы (через запятую)  \n"
+                    "- профессия  \n\n"
+                    "На основе этих данных возвращай результат в формате JSON с двумя основными частями:  \n"
+                    "1. Общий анализ атмосферы в коллективе.  \n"
+                    "2. Список сотрудников с индивидуальным анализом.  \n\n"
+                    "Выходные данные должны иметь следующий формат:  \n\n"
+                    "{  \n"
+                    "  \"overall_analysis\": \"{общий анализ атмосферы в коллективе, основанный на Таро и астрологии. "
+                    "Опиши, какие энергии преобладают, какие отношения между сотрудниками являются особенно положительными или негативными, "
+                    "и какие проблемы могут возникнуть.}\",  \n"
+                    "  \"employees\": [  \n"
+                    "    {  \n"
+                    "      \"name\": \"{имя_сотрудника}\",  \n"
+                    "      \"main_analytics\": \"{подробный текстовый анализ на основе карт Таро и космограммы,"
+                    " объясняющий атмосферу, которую создает сотрудник, его сильные и слабые стороны, "
+                    "а также воздействие на коллектив}\",  \n"
+                    "      \"compatibility_score\": \"{процент_совместимости_сотрудника}\", // Например, \"75%\"  \n"
+                    "      \"impact_on_atmosphere\": \"{влияние сотрудника на атмосферу (позитивное/негативное)}\"  \n"
+                    "    },  \n"
+                    "    ...  \n"
+                    "  ]  \n"
+                    "}  \n\n"
+                    "Пример структуры ответа:  \n\n"
+                    "{  \n"
+                    "  \"overall_analysis\": \"В коллективе ощущается баланс между творческой энергией и разумной аналитикой. "
+                    "Однако есть некоторые напряженные моменты, которые могут вылиться в конфликты, если не решить их вовремя. "
+                    "Карты показывают, что некоторые сотрудники, возможно, создают дисгармонию, "
+                    "тогда как другие выступают как источники вдохновения и поддержки. ...\",  \n"
+                    "  \"employees\": [  \n"
+                    "    {  \n"
+                    "      \"name\": \"Анна\",  \n"
+                    "      \"main_analytics\": \"Анна приносит в команду оптимизм и поддержку. "
+                    "Ее энергия, основанная на сочетании карт Таро, таких как 'Солнце' и 'Звезда', "
+                    "создает пространство для роста. Однако ей стоит быть на чеку, "
+                    "чтобы не перегрузить коллег своим энтузиазмом.\",  \n"
+                    "      \"compatibility_score\": \"85%\",  \n"
+                    "      \"impact_on_atmosphere\": \"позитивное\"  \n"
+                    "    },  \n"
+                    "    {  \n"
+                    "      \"name\": \"Сергей\",  \n"
+                    "      \"main_analytics\": \"Сергей, несмотря на свои сильные стороны как организатора, "
+                    "может создавать напряжение из-за своего перфекционизма. "
+                    "Карты указывают на то, что его высокие ожидания могут эмоционально подавлять других. "
+                    "Необходимо найти баланс.\",  \n"
+                    "      \"compatibility_score\": \"60%\",  \n"
+                    "      \"impact_on_atmosphere\": \"негативное\"  \n"
+                    "    },  \n"
+                    "    {  \n"
+                    "      \"name\": \"Мария\",  \n"
+                    "      \"main_analytics\": \"Мария демонстрирует лидирующие качества благодаря своим астрологическим аспектам, "
+                    "что способствует продуктивности. Тем не менее, ей стоит быть осторожной с критикой, чтобы не создавать барьеров в общении.\",  \n"
+                    "      \"compatibility_score\": \"75%\",  \n"
+                    "      \"impact_on_atmosphere\": \"позитивное\"  \n"
+                    "    }  \n"
+                    "  ]  \n"
+                    "}  \n\n"
+                    "Теперь, предоставь данные о сотрудниках, и я проведу анализ атмосферы в коллективе.",
             "role": "system"
             },
             {
@@ -294,6 +362,7 @@ class YandexGPTTarologue(IGPTTarologue):
         suitability = data["suitability"]
 
         return SuitableAnalyzeEntity(
+            name=data["name"],
             cards=[TaroCardEntity(
                 name=card["name"],
                 meaning=card["meaning"]
@@ -321,6 +390,7 @@ class YandexGPTTarologue(IGPTTarologue):
 
         return CompareAnalyzeEntity(
             boss=UserAnalyzeEntity(
+                name=data["boss"]["name"],
                 cards=[TaroCardEntity(
                     name=card["name"],
                     meaning=card["meaning"]
@@ -334,6 +404,7 @@ class YandexGPTTarologue(IGPTTarologue):
                 ),
             ),
             employee=UserAnalyzeEntity(
+                name=data["employee"]["name"],
                 cards=[TaroCardEntity(
                     name=card["name"],
                     meaning=card["meaning"]
@@ -347,48 +418,20 @@ class YandexGPTTarologue(IGPTTarologue):
                 ),
             ),
             compatibility=CompatibilityEntity(
-                score=int(compatibility["score"]),
+                score=int(str(compatibility["score"]).strip("%")),
                 explanation=compatibility["explanation"]
             )
         )
 
     @staticmethod
     def parse_atmosphere_analyze(data: dict) -> AtmosphereAnalyzeEntity:
-        compatibility = data["compatibility"]
-        boss_cards = data["boss"]["cards"]
-        boss_cosmogram = data["boss"]["cosmogram"]
-        employee_cards = data["boss"]["cards"]
-        employee_cosmogram = data["boss"]["cosmogram"]
-
         return AtmosphereAnalyzeEntity(
-            boss=UserAnalyzeEntity(
-                cards=[TaroCardEntity(
-                    name=card["name"],
-                    meaning=card["meaning"]
-                ) for card in boss_cards],
-                cosmogram=CosmogramEntity(
-                    sun_sign=boss_cosmogram["sun_sign"],
-                    moon_sign=boss_cosmogram["moon_sign"],
-                    rising_sign=boss_cosmogram["rising_sign"],
-                    elements=boss_cosmogram["elements"],
-                    houses=boss_cosmogram["houses"]
-                ),
-            ),
-            employee=UserAnalyzeEntity(
-                cards=[TaroCardEntity(
-                    name=card["name"],
-                    meaning=card["meaning"]
-                ) for card in employee_cards],
-                cosmogram=CosmogramEntity(
-                    sun_sign=employee_cosmogram["sun_sign"],
-                    moon_sign=employee_cosmogram["moon_sign"],
-                    rising_sign=employee_cosmogram["rising_sign"],
-                    elements=employee_cosmogram["elements"],
-                    houses=employee_cosmogram["houses"]
-                ),
-            ),
-            compatibility=CompatibilityEntity(
-                score=int(compatibility["score"]),
-                explanation=compatibility["explanation"]
-            )
+            overall_analysis=data["overall_analysis"],
+            employees=[EmployeeAtmosphereAnalyzeEntity(
+                name=employee["name"],
+                main_analytics=employee["main_analytics"],
+                compatibility_score=int(str(employee["compatibility_score"]).strip("%")),
+                impact_on_atmosphere=employee["impact_on_atmosphere"],
+
+            ) for employee in data["employees"]]
         )

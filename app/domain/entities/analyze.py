@@ -32,6 +32,7 @@ class CompatibilityEntity(BaseEntity):
 
 @dataclass
 class UserAnalyzeEntity(BaseEntity):
+    name: str
     cards: list[TaroCardEntity]
     cosmogram: CosmogramEntity
 
@@ -57,5 +58,14 @@ class CompareListEntity(BaseEntity):
 
 
 @dataclass
-class AtmosphereAnalyzeEntity(CompareAnalyzeEntity):
-    pass
+class EmployeeAtmosphereAnalyzeEntity(BaseEntity):
+    name: str
+    main_analytics: str
+    compatibility_score: int
+    impact_on_atmosphere: str
+
+
+@dataclass
+class AtmosphereAnalyzeEntity(BaseEntity):
+    overall_analysis: str
+    employees: list[EmployeeAtmosphereAnalyzeEntity]

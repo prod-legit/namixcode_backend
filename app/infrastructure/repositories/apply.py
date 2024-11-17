@@ -80,6 +80,7 @@ class SQLAlchemyApplyRepository(IApplyRepository):
     async def get_by_org_id(self, org_id: str) -> list[ApplyEntity]:
         stmt = (
             select(ApplyORM)
+            .join(JobORM)
             .where(JobORM.org_id == org_id)
             .options(
                 joinedload(ApplyORM.job).joinedload(JobORM.org),

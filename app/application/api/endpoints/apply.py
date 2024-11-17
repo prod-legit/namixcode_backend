@@ -6,9 +6,11 @@ from fastapi import APIRouter, Path
 from pydantic import UUID4
 
 from app.application.api.dependencies import CurrentUserDep, CurrentOrgDep
-from app.application.api.schemas.analyze import SuitableAnalyzeSchema, CompareAnalyzeSchema, AtmosphereAnalyzeSchema, CompareListSchema
+from app.application.api.schemas.analyze import SuitableAnalyzeSchema, CompareAnalyzeSchema, AtmosphereAnalyzeSchema, \
+    CompareListSchema
 from app.application.api.schemas.apply import ApplySchema, CreateApplySchema, AcceptApplySchema
 from app.application.api.schemas.status import StatusSchema
+from app.domain.exceptions.base import AppException
 from app.infrastructure.services.gpt_tarologue import IGPTTarologue
 from app.logic.commands.apply.accept_apply import AcceptApplyUseCase, AcceptApplyCommand
 from app.logic.commands.apply.create_apply import CreateApplyUseCase, CreateApplyCommand
@@ -55,7 +57,7 @@ async def accept_user_apply(
         accept_apply: FromDishka[AcceptApplyUseCase]
 ) -> StatusSchema:
     await accept_apply.execute(AcceptApplyCommand(
-        # job_id=current_org.id,
+        job_id=data.job_id,
         user_id=user_id,
         head_id=data.head_id
     ))
@@ -118,8 +120,15 @@ async def compare_user_collective(
 
     analyses = []
     for employee in employees:
-        analysis = await gpt_tarologue.compare_analyze(user=user, boss=employee.user)
-        analyses.append(CompareAnalyzeSchema.from_entity(analysis))
+        try:
+            analysis = await gpt_tarologue.compare_analyze(user=user, boss=employee.user)
+            analyses.append(CompareAnalyzeSchema.from_entity(analysis))
+        except Exception as e:
+            print(e)
+
+    if len(analyses) == 0:
+        raise AppException()
+
     best_employee = analyses[0]
     best_score = best_employee.compatibility.score
     for analysis in analyses:
@@ -127,11 +136,8 @@ async def compare_user_collective(
             best_score = analysis.compatibility.score
             best_employee = analysis
     analyses.remove(best_employee)
-    result = {
-        "best_match": best_employee,
-        'other_matches': analyses
-    }
-    return result
+
+    return CompareListSchema(best_match=best_employee, other_matches=analyses)
 
 
 @router.post(

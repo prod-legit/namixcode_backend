@@ -26,4 +26,5 @@ class CreateApplySchema(BaseModel):
 
 
 class AcceptApplySchema(BaseModel):
+    job_id: UUID4
     head_id: UUID4 | None = None
